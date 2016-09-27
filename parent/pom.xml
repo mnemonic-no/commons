@@ -3,7 +3,7 @@
   <groupId>no.mnemonic.commons</groupId>
   <artifactId>mnemonic-commons-parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.1</version>
   <name>mnemonic-commons-parent</name>
   <url>http://www.mnemonic.no</url>
 
@@ -19,7 +19,7 @@
 
   <scm>
     <developerConnection>scm:git:ssh://stash.mnemonic.no:8022/joss/commons.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>mnemonic-commons-parent-0.0.1</tag>
   </scm>
 
   <distributionManagement>
