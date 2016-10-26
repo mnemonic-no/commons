@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>mnemonic-commons-dummy</artifactId>
+  <artifactId>utilities</artifactId>
   <packaging>jar</packaging>
-  <name>mnemonic-commons-dummy</name>
+  <name>utilities</name>
   <url>http://www.mnemonic.no</url>
 
   <parent>
     <groupId>no.mnemonic.commons</groupId>
-    <artifactId>mnemonic-commons-parent</artifactId>
+    <artifactId>parent</artifactId>
     <version>0.0.2-SNAPSHOT</version>
     <relativePath>../parent</relativePath>
   </parent>
