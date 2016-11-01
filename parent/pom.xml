@@ -10,10 +10,12 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+    <achilles.version>5.1.1</achilles.version>
     <junit.version>4.12</junit.version>
   </properties>
 
   <modules>
+    <module>../testtools</module>
     <module>../utilities</module>
   </modules>
 
