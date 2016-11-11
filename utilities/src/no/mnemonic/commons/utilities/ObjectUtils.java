@@ -9,15 +9,30 @@ public class ObjectUtils {
   }
 
   /**
-   * Throws an exception if 'value' is null, returns 'value' otherwise.
+   * Throws a RuntimeException if 'value' is null, returns 'value' otherwise.
    *
    * @param value   Object to be tested for null.
    * @param message Message passed to the exception thrown.
    * @param <T>     Type of value parameter.
-   * @return 'value' if not null, throws an exception otherwise.
+   * @return 'value' if not null, throws a RuntimeException otherwise.
    */
   public static <T> T notNull(T value, String message) {
     if (value == null) throw new RuntimeException(message);
+    return value;
+  }
+
+  /**
+   * Throws an exception if 'value' is null, returns 'value' otherwise.
+   *
+   * @param value     Object to be tested for null.
+   * @param exception Exception to be thrown.
+   * @param <T>       Type of value parameter.
+   * @return 'value' if not null, throws an exception otherwise.
+   * @throws Exception Thrown if 'value' is null.
+   */
+  public static <T> T notNull(T value, Exception exception) throws Exception {
+    if (exception == null) throw new IllegalArgumentException("Exception was null!");
+    if (value == null) throw exception;
     return value;
   }
 

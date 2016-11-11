@@ -8,19 +8,30 @@ import static org.junit.Assert.*;
 public class ObjectUtilsTest {
 
   @Test
-  public void notNullReturnsValueOnNotNull() {
+  public void notNullReturnsValueOnNotNull() throws Exception {
     Object value = new Object();
     assertEquals(value, ObjectUtils.notNull(value, "notThrown"));
+    assertEquals(value, ObjectUtils.notNull(value, new IllegalArgumentException()));
   }
 
   @Test
-  public void notNullThrowsExceptionOnNull() {
+  public void notNullWithMessageThrowsExceptionOnNull() {
     try {
       ObjectUtils.notNull(null, "test");
       fail();
     } catch (Exception e) {
       assertEquals("test", e.getMessage());
     }
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void notNullWithExceptionThrowsExceptionOnNull() throws Exception {
+    ObjectUtils.notNull(null, new IllegalArgumentException());
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void notNullFailsWithNullException() throws Exception {
+    ObjectUtils.notNull(new Object(), (Exception) null);
   }
 
   @Test
