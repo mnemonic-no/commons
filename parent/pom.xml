@@ -19,9 +19,10 @@
     <module>../testtools</module>
     <module>../utilities</module>
     <module>../component</module>
+    <module>../logging</module>
+    <module>../logging-impl</module>
     <!--
     <module>../container</module>
-    <module>../logging</module>
     -->
   </modules>
 
