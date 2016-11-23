@@ -10,6 +10,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+    <log4j.version>2.7</log4j.version>
     <achilles.version>5.1.1</achilles.version>
     <junit.version>4.12</junit.version>
   </properties>
@@ -17,6 +18,11 @@
   <modules>
     <module>../testtools</module>
     <module>../utilities</module>
+    <module>../component</module>
+    <!--
+    <module>../container</module>
+    <module>../logging</module>
+    -->
   </modules>
 
   <scm>
