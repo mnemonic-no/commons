@@ -1,5 +1,6 @@
 package no.mnemonic.commons.utilities;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -76,6 +77,19 @@ public class ObjectUtils {
     if (converter == null) throw new IllegalArgumentException("Converter was null!");
     if (value == null) return null;
     return converter.apply(value);
+  }
+
+  /**
+   * Executes a consumer function on given value, unless value is null
+   *
+   * @param value     Value to be evaluated.
+   * @param consumer  Consumer function to give value to
+   * @param <T>       Type of value parameter.
+   */
+  public static <T> void ifNotNullDo(T value, Consumer<T> consumer) {
+    if (consumer == null) throw new IllegalArgumentException("Consumer was null!");
+    if (value == null) return;
+    consumer.accept(value);
   }
 
   /**

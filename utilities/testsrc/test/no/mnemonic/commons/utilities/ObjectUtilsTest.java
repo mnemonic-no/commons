@@ -3,6 +3,8 @@ package test.no.mnemonic.commons.utilities;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import org.junit.Test;
 
+import java.util.concurrent.atomic.LongAdder;
+
 import static org.junit.Assert.*;
 
 public class ObjectUtilsTest {
@@ -72,6 +74,25 @@ public class ObjectUtilsTest {
   @Test(expected = IllegalArgumentException.class)
   public void ifNotNullWithNullValueWithoutConverterThrowsException() {
     ObjectUtils.ifNotNull(42, null, "nullValue");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void ifNotNullDoWithNullConsumerThrowsException() {
+    ObjectUtils.ifNotNullDo(42, null);
+  }
+
+  @Test
+  public void ifNotNullDoWithConsumer() {
+    LongAdder adder = new LongAdder();
+    ObjectUtils.ifNotNullDo(42L, adder::add);
+    assertEquals(42, adder.longValue());
+  }
+
+  @Test
+  public void ifNotNullDoWithNullValue() {
+    LongAdder adder = new LongAdder();
+    ObjectUtils.ifNotNullDo(null, adder::add);
+    assertEquals(0, adder.longValue());
   }
 
 }
