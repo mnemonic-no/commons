@@ -29,7 +29,7 @@ public class AvailablePortFinder {
 
     int port = start;
     while (port <= MAX_PORT) {
-      if (isPortAvailable(start)) return port;
+      if (isPortAvailable(port)) return port;
       port++;
     }
 
