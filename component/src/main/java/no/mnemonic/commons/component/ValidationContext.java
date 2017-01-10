@@ -13,16 +13,30 @@ public class ValidationContext {
     return errors.size() == 0;
   }
 
-  public ValidationContext addWarning(ValidationAspect component, Object msg) {
+  /**
+   * @param component The component reporting the warning
+   * @param msg the warning message
+   * @return the context
+   */
+  public ValidationContext addWarning(Object component, Object msg) {
     warnings.add(component + ": " + msg);
     return this;
   }
 
-  public ValidationContext addError(ValidationAspect component, Object msg) {
+  /**
+   * @param component The component reporting the error
+   * @param msg the error message
+   * @return the context
+   */
+  public ValidationContext addError(Object component, Object msg) {
     errors.add(component + ": " + msg);
     return this;
   }
 
+  /**
+   * Clear all errors and warnings
+   * @return the context
+   */
   public ValidationContext reset() {
     warnings.clear();
     errors.clear();

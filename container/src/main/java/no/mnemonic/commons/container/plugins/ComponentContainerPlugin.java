@@ -2,10 +2,14 @@ package no.mnemonic.commons.container.plugins;
 
 import java.util.Map;
 
-public interface ComponentContainerPlugin<T> {
+/**
+ * Use this interface to register container plugins.
+ * Plugins will be invoked before the container is validated or started.
+ */
+public interface ComponentContainerPlugin {
 
-  Class<T> getBeanInterface();
+  boolean appliesTo(Object obj);
 
-  void handleBeans(Map<String, T> matchingBeans);
+  void registerBeans(Map<String, Object> matchingBeans);
 
 }

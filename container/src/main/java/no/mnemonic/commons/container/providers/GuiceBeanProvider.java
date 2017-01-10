@@ -2,46 +2,64 @@ package no.mnemonic.commons.container.providers;
 
 import com.google.inject.*;
 import com.google.inject.name.Names;
+import com.google.inject.spi.DefaultBindingScopingVisitor;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class GuiceBeanProvider implements BeanProvider{
 
   private final Injector injector;
 
-  public GuiceBeanProvider(Module module, Properties properties) {
-    Set<Module> modules = SetUtils.set(module);
+  public GuiceBeanProvider(Module... modules) {
+    this(null, modules);
+  }
+
+  public GuiceBeanProvider(Properties properties, Module... modules) {
+    Set<Module> moduleSet = SetUtils.set(modules).stream().filter(m->m!=null).collect(Collectors.toSet());
     if (properties != null) {
-      modules.add(createPropertiesModule(properties));
+      moduleSet.add(createPropertiesModule(properties));
     }
-    injector = Guice.createInjector(modules);
+    injector = Guice.createInjector(moduleSet);
   }
 
   @Override
   public <T> Optional<T> getBean(Class<T> ofType) {
-    try {
-      return Optional.of(injector.getProvider(ofType).get());
-    } catch (Exception e) {
-      return Optional.empty();
-    }
+    Map<String, T> beans = getBeans(ofType);
+    if (beans.isEmpty()) return Optional.empty();
+    if (beans.size() > 1) throw new IllegalStateException("Multiple implementations found for this class: " + ofType);
+    return Optional.of(beans.values().iterator().next());
   }
 
   @Override
-  public <T> Map<String, T> getBeans(Class<T> ofType) {
+  public <T> Map<String, T> getBeans(Class<T> searchType) {
     Map<String, T> result = new HashMap<>();
-    for (Binding<T> t : injector.findBindingsByType(TypeLiteral.get(ofType))) {
-      result.put(t.getKey().toString(), t.getProvider().get());
-    }
+    injector.getAllBindings().values().stream()
+        .forEach(b-> b.acceptScopingVisitor(new DefaultBindingScopingVisitor(){
+          @Override
+          public Object visitScope(Scope scope) {
+            if (scope == Scopes.SINGLETON) {
+              Object obj = b.getProvider().get();
+              if (searchType.isInstance(obj)) {
+                //noinspection unchecked
+                result.put(createKey(b.getKey()), (T) obj);
+              }
+            }
+            return null;
+          }
+        }));
     return result;
   }
 
   @Override
   public Map<String, Object> getBeans() {
-    Map<String, Object> result = new HashMap<>();
-    for (Binding<?> t : injector.getAllBindings().values()) {
-      result.put(t.getKey().toString(), t.getProvider().get());
-    }
+    return getBeans(Object.class);
+  }
+
+  private String createKey(Key nameKey) {
+    String result = nameKey.getTypeLiteral().getRawType().getSimpleName();
+    if (nameKey.getAnnotationType() != null) result = result + "-" + nameKey.getAnnotationType().getSimpleName();
     return result;
   }
 

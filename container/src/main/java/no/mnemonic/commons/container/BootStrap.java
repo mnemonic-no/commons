@@ -7,10 +7,14 @@ import no.mnemonic.commons.component.Versioned;
 import no.mnemonic.commons.container.providers.BeanProvider;
 import no.mnemonic.commons.container.providers.GuiceBeanProvider;
 import no.mnemonic.commons.container.providers.SpringXmlBeanProvider;
+import no.mnemonic.commons.utilities.collections.CollectionUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,6 +37,7 @@ public class BootStrap implements Versioned, ComponentListener {
   private static final int EXIT_CODE_EXEC_ERROR = 1;
   private static final String PROP_GUICE = "guice";
   private static final String PROP_SPRING = "spring";
+  public static final String PROP_MODULE = "module";
 
   //interface methods
 
@@ -71,61 +76,88 @@ public class BootStrap implements Versioned, ComponentListener {
 
   private static void usage() {
     System.out.println("Usage:");
-    System.out.println("   java " + BootStrap.class.getName() + " spring=<xmlResource> [param1=value [param2=value2 ...]]");
-    System.out.println("   java " + BootStrap.class.getName() + " guice=<moduleClass> [param1=value [param2=value2 ...]]");
+    System.out.println("   java " + BootStrap.class.getName() + " spring <xmlResource> [param1=value [param2=value2 ...]]");
+    System.out.println("   java " + BootStrap.class.getName() + " guice module=<moduleClass> [module=<moduleClass> ...] [param1=value [param2=value2 ...]]");
     System.out.println("  xmlResource - may be a classpath resource or a path to a file");
     System.out.println("  moduleClass - full qualified class name to a Guice resource");
     System.out.println();
     System.out.println("Parameters except for guice and spring directive are passed on to the created container as properties.");
   }
 
-  private ComponentContainer boot(Properties namingParameters, Properties properties) {
-    BeanProvider beanProvider;
-    if (namingParameters.containsKey(PROP_SPRING)) {
-      beanProvider = getSpringBootContainer(namingParameters.getProperty(PROP_SPRING), properties);
-    } else if (namingParameters.containsKey(PROP_GUICE)) {
-      beanProvider = getGuiceBootContainer(namingParameters.getProperty(PROP_GUICE), properties);
-    } else {
-      throw new RuntimeException("Unknown boot type (use spring or guice");
-    }
-    //create the administration container housing the boot components
-    ComponentContainer bootContainer = ComponentContainer.create(beanProvider);
-    bootContainer.addComponentListener(this);
-    //start the boot components
-    bootContainer.initialize();
-    return bootContainer;
-
-  }
-
-  private ComponentContainer boot(String[] args) {
+  private void boot(String[] args) {
     title();
 
     try {
-      if (args.length > 0) {
-        Properties namingParameters = new Properties();
-        Pattern p = Pattern.compile("([0-9a-zA-Z]+)=([^ ]+)");
-        for (String arg : args) {
-          Matcher m = p.matcher(arg);
-          if (!m.matches()) {
-            System.out.println("Malformed argument: " + arg);
-            usage();
-            System.exit(EXIT_CODE_ARGUMENT_ERROR);
-          }
-          String key = m.group(1);
-          String value = m.group(2);
-          namingParameters.put(key, value);
-        }
+      if (args.length == 0) {
+        usage();
+        return;
+      }
 
-        return boot(namingParameters, resolveProperties());
+      if (args[0].equals(PROP_SPRING)) {
+        springBoot(args[1], Arrays.copyOfRange(args, 2, args.length));
+      } else if (args[0].equals(PROP_GUICE)) {
+        guiceBoot(Arrays.copyOfRange(args, 1, args.length));
       } else {
         usage();
-        return null;
+        System.exit(EXIT_CODE_ARGUMENT_ERROR);
       }
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(EXIT_CODE_EXEC_ERROR);
-      return null;
     }
+  }
+
+  private static class Property {
+    private final String key, value;
+
+    public Property(String key, String value) {
+      this.key = key;
+      this.value = value;
+    }
+  }
+
+  private Property parseProperty(String arg) {
+    Pattern p = Pattern.compile("([0-9a-zA-Z]+)=([^ ]+)");
+    Matcher m = p.matcher(arg);
+    if (!m.matches()) {
+      System.err.println("Malformed argument: " + arg);
+      usage();
+      System.exit(EXIT_CODE_ARGUMENT_ERROR);
+    }
+    return new Property(m.group(1), m.group(2));
+  }
+
+  private void guiceBoot(String[] remainingArgs) {
+    Set<String> moduleClasses = new HashSet<>();
+    //noinspection MismatchedQueryAndUpdateOfCollection
+    Properties containerProps = new Properties();
+    for (String arg : remainingArgs) {
+      Property p = parseProperty(arg);
+      if (p.key.equals(PROP_MODULE)) {
+        moduleClasses.add(p.value);
+      } else {
+        containerProps.setProperty(p.key, p.value);
+      }
+    }
+    bootContainer(getGuiceBootContainer(moduleClasses));
+  }
+
+  private void springBoot(String springResource, String[] containerParameters) {
+    //container props not used for now, keep for later
+    //noinspection MismatchedQueryAndUpdateOfCollection
+    Properties containerProps = new Properties();
+    for (String s : containerParameters) {
+      Property p = parseProperty(s);
+      containerProps.setProperty(p.key, p.value);
+    }
+    bootContainer(getSpringBootContainer(springResource));
+  }
+
+  private void bootContainer(BeanProvider beanProvider) {
+    ComponentContainer bootContainer = ComponentContainer.create(beanProvider);
+    bootContainer.addComponentListener(this);
+    //start the boot components
+    bootContainer.initialize();
   }
 
   private Properties resolveProperties() {
@@ -142,19 +174,25 @@ public class BootStrap implements Versioned, ComponentListener {
     }
   }
 
-  private BeanProvider getSpringBootContainer(String bootDescriptorName, Properties properties) {
+  private BeanProvider getSpringBootContainer(String bootDescriptorName) {
     return SpringXmlBeanProvider.builder()
         .addInput(bootDescriptorName)
-        .setProperties(properties)
+        .setProperties(resolveProperties())
         .build();
   }
 
-  private BeanProvider getGuiceBootContainer(String bootDescriptorName, Properties properties) {
+  private BeanProvider getGuiceBootContainer(Set<String> moduleClasses) {
+    if (CollectionUtils.isEmpty(moduleClasses)) {
+      throw new IllegalArgumentException("No modules specified");
+    }
     try {
-      Module moduleClass = (Module) Class.forName(bootDescriptorName).newInstance();
-      return new GuiceBeanProvider(moduleClass, properties);
+      Set<Module> modules = new HashSet<>();
+      for (String clz : moduleClasses) {
+        modules.add((Module) Class.forName(clz).newInstance());
+      }
+      return new GuiceBeanProvider(resolveProperties(), modules.toArray(new Module[]{}));
     } catch (Exception e) {
-      throw new RuntimeException("Invalid Guice module: " + bootDescriptorName);
+      throw new RuntimeException("Error booting modules", e);
     }
   }
 }

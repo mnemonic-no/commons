@@ -18,8 +18,6 @@ public class ComponentContainerTest {
   private ValidationAspect validationAspect;
   @Mock
   private LifecycleAspect lifecycleAspect;
-  @Mock
-  private DependencyAspect dependencyAspect;
 
   @Before
   public void setup() {

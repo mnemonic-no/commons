@@ -2,24 +2,26 @@ package no.mnemonic.commons.container;
 
 import no.mnemonic.commons.component.*;
 import no.mnemonic.commons.container.plugins.ComponentContainerPlugin;
+import no.mnemonic.commons.container.plugins.ComponentDependencyResolver;
+import no.mnemonic.commons.container.plugins.ComponentLifecycleHandler;
+import no.mnemonic.commons.container.plugins.ComponentValidator;
+import no.mnemonic.commons.container.plugins.impl.ComponentLifecycleAspectHandler;
+import no.mnemonic.commons.container.plugins.impl.ComponentValidationAspectValidator;
+import no.mnemonic.commons.container.plugins.impl.FieldAnnotationDependencyResolver;
+import no.mnemonic.commons.container.plugins.impl.MethodAnnotationDependencyResolver;
 import no.mnemonic.commons.container.providers.BeanProvider;
 import no.mnemonic.commons.container.providers.SimpleBeanProvider;
 import no.mnemonic.commons.logging.Logger;
 import no.mnemonic.commons.logging.Logging;
-import no.mnemonic.commons.utilities.collections.SetUtils;
+import no.mnemonic.commons.utilities.ObjectUtils;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static no.mnemonic.commons.component.ComponentState.*;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
-import static no.mnemonic.commons.utilities.collections.SetUtils.set;
 
 /**
  * ComponentContainer
@@ -28,7 +30,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
   //nodes and state
   private final BeanProvider beans;
-  private final Set<LifecycleAspect> initializedComponents = Collections.synchronizedSet(new HashSet<>());
+  private final Set<Object> initializedComponents = Collections.synchronizedSet(new HashSet<>());
   private final Map<String, ComponentNode> nodes = new ConcurrentHashMap<>();
   private final Map<Object, ComponentNode> objectNodeMap = new ConcurrentHashMap<>();
   //parent and child containers
@@ -39,8 +41,11 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   private final AtomicLong lastStoppingNotificationTimestamp = new AtomicLong();
 
   //listeners
-  private Collection<ComponentListener> componentListeners = new HashSet<>();
-  private Collection<ContainerListener> containerListeners = new HashSet<>();
+  private final Collection<ComponentListener> componentListeners = new HashSet<>();
+  private final Collection<ContainerListener> containerListeners = new HashSet<>();
+  private final Collection<ComponentDependencyResolver> dependencyResolvers = new HashSet<>();
+  private final Collection<ComponentLifecycleHandler> lifecycleManagers = new HashSet<>();
+  private final Collection<ComponentValidator> validators = new HashSet<>();
 
   private final Object STATE_LOCK = new Object();
   private final Logger LOGGER = Logging.getLogger(ComponentContainer.class.getName());
@@ -196,7 +201,6 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       nodes.values().forEach(this::stopNode);
 
       // stop nodes not registered in initial dependency graph
-      set(initializedComponents).forEach(LifecycleAspect::stopComponent);
       initializedComponents.clear();
 
     } catch (RuntimeException e) {
@@ -252,24 +256,32 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     }
   }
 
-  // private methods
-
   /**
    * Set all special purpose objects to special interfaces
    */
   private void handleContainerPlugins() {
     beans.getBeans(ComponentContainerPlugin.class).forEach((k, v)->{
       //noinspection unchecked
-      v.handleBeans(beans.getBeans(v.getBeanInterface()));
+      registerPlugin(v);
     });
+
+    lifecycleManagers.addAll(beans.getBeans(ComponentLifecycleHandler.class).values());
+    lifecycleManagers.add(new ComponentLifecycleAspectHandler());
+
+    dependencyResolvers.addAll(beans.getBeans(ComponentDependencyResolver.class).values());
+    dependencyResolvers.add(new MethodAnnotationDependencyResolver());
+    dependencyResolvers.add(new FieldAnnotationDependencyResolver());
+
+    validators.addAll(beans.getBeans(ComponentValidator.class).values());
+    validators.add(new ComponentValidationAspectValidator());
   }
 
   /**
-   * Validate all components that implement ValidationAspect.
+   * Validate all components that has a validator
    */
   private void validate() {
     ValidationContext validationContext = new ValidationContext();
-    beans.getBeans(ValidationAspect.class).values().forEach(b -> b.validate(validationContext));
+    beans.getBeans().values().forEach(b -> validateBean(b, validationContext));
 
     for (String error : validationContext.getErrors()) {
       getLogger().error(error);
@@ -281,6 +293,23 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
     if (!validationContext.isValid()) {
       throw new ComponentConfigurationException(validationContext);
+    }
+  }
+
+  private void registerPlugin(ComponentContainerPlugin plugin) {
+    Map<String, Object> targets = new HashMap<>();
+    beans.getBeans().forEach((k,v) -> {
+      if (plugin.appliesTo(v)) targets.put(k, v);
+    });
+    plugin.registerBeans(targets);
+  }
+
+  private void validateBean(Object bean, ValidationContext validationContext) {
+    for (ComponentValidator v : validators) {
+      if (v.appliesTo(bean)) {
+        v.validate(validationContext, bean);
+        return;
+      }
     }
   }
 
@@ -313,12 +342,13 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     // first start all components which we have an initialization dependency to
     n.getInitializationDependencies().forEach(this::startNode);
 
-    // then start this component
-    if (n.getObject() instanceof LifecycleAspect) {
+    // see if any lifecycle manager can start this component
+    for (ComponentLifecycleHandler manager : lifecycleManagers) {
+      if (!manager.appliesTo(n.getObject())) continue;
       getLogger().info("Starting " + n.getObjectName() + "/" + n.getObject());
-      ((LifecycleAspect) n.getObject()).startComponent();
+      manager.startComponent(n.getObject());
       // mark component as initialized
-      initializedComponents.add((LifecycleAspect) n.getObject());
+      initializedComponents.add(n.getObject());
     }
   }
 
@@ -335,18 +365,16 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     // first stop all components which we have a destruction dependency to
     n.getDestructionDependencies().forEach(this::stopNode);
 
-    // then stop/destroyAll this component
-    if (n.getObject() instanceof LifecycleAspect) {
-      if (getLogger().isInfo()) getLogger().info("Destroying " + n.getObjectName() + "/" + n.getObject());
-      System.err.println("* Destroying " + n.getObjectName() + "/" + n.getObject());
+    // see if any lifecycle manager can stop this component
+    for (ComponentLifecycleHandler manager : lifecycleManagers) {
+      if (!manager.appliesTo(n.getObject())) continue;
       try {
-        ((LifecycleAspect) n.getObject()).stopComponent();
+        getLogger().info("Destroying " + n.getObjectName() + "/" + n.getObject());
+        manager.stopComponent(n.getObject());
+        if (getLogger().isDebug()) getLogger().debug("Finished stopComponent for component " + n.getObjectName());
       } catch (Exception e) {
         getLogger().error("Error calling stopComponent on " + n.getObject(), e);
       }
-      if (getLogger().isDebug())
-        getLogger().debug("Finished stopComponent for component " + n.getObjectName());
-
       // remove initialization mark
       initializedComponents.remove(n.getObject());
     }
@@ -368,92 +396,41 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     });
   }
 
-  private Collection<Object> getDependencies(ComponentNode node) {
-    Collection<Object> dependencies = new ArrayList<>();
-    if (node.getObject() instanceof DependencyAspect) {
-      DependencyAspect da = (DependencyAspect) node.getObject();
-      dependencies.addAll(da.getDependencies());
-    } else {
-
-      Object object = node.getObject();
-      Class objectClass = object.getClass();
-
-      for (Method m : findDependencyGetters(objectClass)) {
-        try {
-          m.setAccessible(true);
-            Object o = m.invoke(node.getObject());
-            if (o == null) continue;
-            dependencies.add(o);
-        } catch (IllegalAccessException | InvocationTargetException e) {
-          getLogger().warning(String.format("Error checking for dependency: Node %s property %s", node.getObjectName(), m.getName()));
-        }
-      }
-
-      for (Field f : findDependencyFields(objectClass)) {
-        try {
-          f.setAccessible(true);
-          Object o = f.get(object);
-          if (o == null) continue;
-          dependencies.add(o);
-        } catch (IllegalAccessException e) {
-          getLogger().warning(String.format("Error checking for dependency: Node %s property %s", node.getObjectName(), f.getName()));
-        }
-      }
-
-    }
-    return dependencies;
-  }
-
-  private Set<Method> findDependencyGetters(Class objectClass) {
-    return set(objectClass.getMethods()).stream()
-        .filter(m -> m.isAnnotationPresent(Dependency.class))
-        .filter(m -> m.getParameterTypes().length == 0)
-        .collect(Collectors.toSet());
-  }
-
-  private Set<Field> findDependencyFields(Class objectClass) {
-    if (objectClass == null) return set();
-    return SetUtils.union(
-        set(objectClass.getDeclaredFields()).stream()
-            .filter(f -> f.isAnnotationPresent(Dependency.class))
-            .collect(Collectors.toSet()),
-        findDependencyFields(objectClass.getSuperclass())
-    );
+  private void resolveDependencies() {
+    nodes.keySet().forEach(oid -> resolveDependsOn(nodes.get(oid)));
   }
 
   private void resolveDependsOn(ComponentNode node) {
     //check for Dependency annotations on getters
-    for (Object dependency : getDependencies(node)) {
-      //noinspection StatementWithEmptyBody
-      if (dependency == null) {
-        //nothing to do, object is not set
-      } else if (dependency instanceof Collection) {
-        //add dependency to each member of collection
-        for (Object oo : (Collection) dependency) {
-          ComponentNode dependencyNode = objectNodeMap.get(oo);
-          if (dependencyNode == null) continue;
-          node.addInitializationDependency(dependencyNode);
-          dependencyNode.addDestructionDependency(node);
-        }
-      } else {
-        //add dependency to object
-        ComponentNode dependencyNode = objectNodeMap.get(dependency);
-        if (dependencyNode == null) continue;
-        node.addInitializationDependency(dependencyNode);
-        dependencyNode.addDestructionDependency(node);
-      }
-    }
+    getDependencies(node).stream()
+        .filter(dep -> dep != null)
+        .forEach(dep -> {
+          if (dep instanceof Collection) {
+            //add dependency to each member of collection
+            ((Collection<?>) dep).stream()
+                .map(objectNodeMap::get)
+                .filter(o -> o != null)
+                .forEach(depnode -> addDependency(node, depnode));
+          } else {
+            //add dependency to object
+            ObjectUtils.ifNotNullDo(objectNodeMap.get(dep), depnode -> addDependency(node, depnode));
+          }
+    });
   }
 
-  private void resolveDependencies() {
-    // now; create dependencies
-    nodes.keySet().forEach(oid -> resolveDependsOn(nodes.get(oid)));
+  private void addDependency(ComponentNode node, ComponentNode dependencyNode) {
+    node.addInitializationDependency(dependencyNode);
+    dependencyNode.addDestructionDependency(node);
   }
 
-  /**
-   * Special thread which is started upon container shutdown call. When run, it
-   * shuts down all containers
-   */
+  private Collection<?> getDependencies(ComponentNode node) {
+    Collection<Object> dependencies = new HashSet<>();
+    dependencyResolvers.forEach(r -> dependencies.addAll(
+        ObjectUtils.ifNull(r.resolveDependencies(node.getObject()), new HashSet<>())
+    ));
+    return dependencies;
+  }
+
   private class ShutdownTask implements Runnable {
 
     private ComponentContainer rootContainer;
