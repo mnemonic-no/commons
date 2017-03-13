@@ -8,7 +8,7 @@
   <parent>
     <groupId>no.mnemonic.commons</groupId>
     <artifactId>parent</artifactId>
-    <version>0.0.15</version>
+    <version>0.0.16-SNAPSHOT</version>
     <relativePath>../parent</relativePath>
   </parent>
 
