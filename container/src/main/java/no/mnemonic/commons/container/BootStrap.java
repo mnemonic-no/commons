@@ -37,7 +37,7 @@ public class BootStrap implements Versioned, ComponentListener {
   private static final int EXIT_CODE_EXEC_ERROR = 1;
   private static final String PROP_GUICE = "guice";
   private static final String PROP_SPRING = "spring";
-  public static final String PROP_MODULE = "module";
+  private static final String PROP_MODULE = "module";
 
   //interface methods
 
@@ -65,7 +65,9 @@ public class BootStrap implements Versioned, ComponentListener {
 
   //private methods
 
-  private BootStrap() {
+  //allow subclasses
+  @SuppressWarnings("WeakerAccess")
+  protected BootStrap() {
   }
 
   private void title() {
@@ -84,33 +86,38 @@ public class BootStrap implements Versioned, ComponentListener {
     System.out.println("Parameters except for guice and spring directive are passed on to the created container as properties.");
   }
 
-  private void boot(String[] args) {
+  //allow subclasses
+  @SuppressWarnings("WeakerAccess")
+  protected ComponentContainer boot(String[] args) {
     title();
 
     try {
       if (args.length == 0) {
         usage();
-        return;
+        return null;
       }
 
-      if (args[0].equals(PROP_SPRING)) {
-        springBoot(args[1], Arrays.copyOfRange(args, 2, args.length));
-      } else if (args[0].equals(PROP_GUICE)) {
-        guiceBoot(Arrays.copyOfRange(args, 1, args.length));
-      } else {
-        usage();
-        System.exit(EXIT_CODE_ARGUMENT_ERROR);
+      switch (args[0]) {
+        case PROP_SPRING:
+          return springBoot(args[1], Arrays.copyOfRange(args, 2, args.length));
+        case PROP_GUICE:
+          return guiceBoot(Arrays.copyOfRange(args, 1, args.length));
+        default:
+          usage();
+          System.exit(EXIT_CODE_ARGUMENT_ERROR);
+          return null;
       }
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(EXIT_CODE_EXEC_ERROR);
+      return null;
     }
   }
 
   private static class Property {
     private final String key, value;
 
-    public Property(String key, String value) {
+    Property(String key, String value) {
       this.key = key;
       this.value = value;
     }
@@ -127,7 +134,7 @@ public class BootStrap implements Versioned, ComponentListener {
     return new Property(m.group(1), m.group(2));
   }
 
-  private void guiceBoot(String[] remainingArgs) {
+  private ComponentContainer guiceBoot(String[] remainingArgs) {
     Set<String> moduleClasses = new HashSet<>();
     //noinspection MismatchedQueryAndUpdateOfCollection
     Properties containerProps = new Properties();
@@ -139,10 +146,10 @@ public class BootStrap implements Versioned, ComponentListener {
         containerProps.setProperty(p.key, p.value);
       }
     }
-    bootContainer(getGuiceBootContainer(moduleClasses));
+    return bootContainer(getGuiceBootContainer(moduleClasses));
   }
 
-  private void springBoot(String springResource, String[] containerParameters) {
+  private ComponentContainer springBoot(String springResource, String[] containerParameters) {
     //container props not used for now, keep for later
     //noinspection MismatchedQueryAndUpdateOfCollection
     Properties containerProps = new Properties();
@@ -150,14 +157,15 @@ public class BootStrap implements Versioned, ComponentListener {
       Property p = parseProperty(s);
       containerProps.setProperty(p.key, p.value);
     }
-    bootContainer(getSpringBootContainer(springResource));
+    return bootContainer(getSpringBootContainer(springResource));
   }
 
-  private void bootContainer(BeanProvider beanProvider) {
+  private ComponentContainer bootContainer(BeanProvider beanProvider) {
     ComponentContainer bootContainer = ComponentContainer.create(beanProvider);
     bootContainer.addComponentListener(this);
     //start the boot components
     bootContainer.initialize();
+    return bootContainer;
   }
 
   private Properties resolveProperties() {
