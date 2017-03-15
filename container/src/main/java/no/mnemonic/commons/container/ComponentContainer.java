@@ -1,6 +1,7 @@
 package no.mnemonic.commons.container;
 
 import no.mnemonic.commons.component.*;
+import no.mnemonic.commons.component.ComponentState;
 import no.mnemonic.commons.container.plugins.ComponentContainerPlugin;
 import no.mnemonic.commons.container.plugins.ComponentDependencyResolver;
 import no.mnemonic.commons.container.plugins.ComponentLifecycleHandler;
@@ -14,6 +15,7 @@ import no.mnemonic.commons.container.providers.SimpleBeanProvider;
 import no.mnemonic.commons.logging.Logger;
 import no.mnemonic.commons.logging.Logging;
 import no.mnemonic.commons.utilities.ObjectUtils;
+import no.mnemonic.commons.utilities.collections.MapUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -231,7 +233,13 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     return LOGGER;
   }
 
-  private Collection<ComponentContainer> getChildContainers() {
+  Map<String, Object> getComponents() {
+    synchronized (STATE_LOCK) {
+      return MapUtils.map(nodes.entrySet(), e->MapUtils.Pair.T(e.getKey(), e.getValue().getObject()));
+    }
+  }
+
+  Collection<ComponentContainer> getChildContainers() {
     synchronized (STATE_LOCK) {
       return Collections.unmodifiableCollection(list(childContainers));
     }

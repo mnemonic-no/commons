@@ -8,9 +8,11 @@ import no.mnemonic.commons.container.providers.BeanProvider;
 import no.mnemonic.commons.container.providers.GuiceBeanProvider;
 import no.mnemonic.commons.container.providers.SpringXmlBeanProvider;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
+import no.mnemonic.commons.utilities.collections.SetUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -32,7 +34,8 @@ import java.util.regex.Pattern;
  */
 public class BootStrap implements Versioned, ComponentListener {
 
-  private static final String APPLICATION_PROPERTIES_FILE = "application.properties.file";
+  static final String APPLICATION_PROPERTIES_FILE = "application.properties.file";
+  static final String INCLUDE_FILE_PREFIX = "include.file.";
   private static final int EXIT_CODE_ARGUMENT_ERROR = 2;
   private static final int EXIT_CODE_EXEC_ERROR = 1;
   private static final String PROP_GUICE = "guice";
@@ -55,12 +58,19 @@ public class BootStrap implements Versioned, ComponentListener {
   public void notifyComponentStopping(Component component) {
   }
 
+  protected void containerStarted(ComponentContainer container) {
+  }
+
   //public methods
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) {
     // Start the application.
-    new BootStrap().boot(args);
+    try {
+      new BootStrap().boot(args);
+    } catch (BootStrapException e) {
+      System.exit(e.exitCode);
+    }
   }
 
   //private methods
@@ -88,7 +98,7 @@ public class BootStrap implements Versioned, ComponentListener {
 
   //allow subclasses
   @SuppressWarnings("WeakerAccess")
-  protected ComponentContainer boot(String[] args) {
+  protected ComponentContainer boot(String[] args) throws BootStrapException {
     title();
 
     try {
@@ -104,13 +114,22 @@ public class BootStrap implements Versioned, ComponentListener {
           return guiceBoot(Arrays.copyOfRange(args, 1, args.length));
         default:
           usage();
-          System.exit(EXIT_CODE_ARGUMENT_ERROR);
-          return null;
+          throw new BootStrapException(null, EXIT_CODE_ARGUMENT_ERROR);
       }
+    } catch (BootStrapException e) {
+      throw e;
     } catch (Exception e) {
       e.printStackTrace();
-      System.exit(EXIT_CODE_EXEC_ERROR);
-      return null;
+      throw new BootStrapException(e, EXIT_CODE_EXEC_ERROR);
+    }
+  }
+
+  protected class BootStrapException extends Exception {
+    final int exitCode;
+
+    protected BootStrapException(Throwable cause, int exitCode) {
+      super(cause);
+      this.exitCode = exitCode;
     }
   }
 
@@ -165,24 +184,39 @@ public class BootStrap implements Versioned, ComponentListener {
     bootContainer.addComponentListener(this);
     //start the boot components
     bootContainer.initialize();
+    //allow subclasses to add functionality here
+    containerStarted(bootContainer);
     return bootContainer;
   }
 
   private Properties resolveProperties() {
     String propertyFileName = System.getProperty(APPLICATION_PROPERTIES_FILE);
-    try {
-      Properties p = System.getProperties();
+      Properties properties = System.getProperties();
       if (propertyFileName != null) {
-        p = new Properties(p);
-        p.load(new FileInputStream(propertyFileName));
+        properties = new Properties(properties);
+        loadProperties(properties, propertyFileName);
       }
-      return p;
-    } catch (IOException e) {
-      throw new RuntimeException("Could not load property file: " + propertyFileName);
-    }
+      resolveIncludes(properties);
+      return properties;
   }
 
-  private BeanProvider getSpringBootContainer(String bootDescriptorName) {
+  private void resolveIncludes(Properties properties) {
+    SetUtils.set(properties.entrySet())
+            .stream()
+            .filter(e->String.valueOf(e.getKey()).startsWith(INCLUDE_FILE_PREFIX))
+            .forEach(e->loadProperties(properties, String.valueOf(e.getValue())));
+  }
+
+  private void loadProperties(Properties properties, String file) {
+    try (InputStream is = new FileInputStream(file)){
+      properties.load(is);
+    } catch (IOException e) {
+      throw new RuntimeException("Could not load property file: " + file);
+    }
+
+  }
+
+    private BeanProvider getSpringBootContainer(String bootDescriptorName) {
     return SpringXmlBeanProvider.builder()
         .addInput(bootDescriptorName)
         .setProperties(resolveProperties())
