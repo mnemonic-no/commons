@@ -1,4 +1,4 @@
-package no.mnemonic.commons.logging.impl;
+package no.mnemonic.commons.logging.log4j;
 
 
 import no.mnemonic.commons.logging.Logger;
@@ -13,7 +13,7 @@ public class Log4JLoggingProvider implements LoggingProvider {
     return new Log4JLogger(name);
   }
 
-  private class Log4JLogger implements Logger {
+  public static class Log4JLogger implements Logger {
     private final org.apache.logging.log4j.Logger log4jLogger;
     public Log4JLogger(String name) {
       this.log4jLogger = LogManager.getLogger(name);

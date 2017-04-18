@@ -1,10 +1,18 @@
-package no.mnemonic.commons.logging.impl;
+package no.mnemonic.commons.logging.log4j;
 
 import no.mnemonic.commons.logging.Logger;
 import no.mnemonic.commons.logging.Logging;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 public class Log4JLoggingProviderTest {
+
+  @Test
+  public void testDefaultLoggingProviderPicksUpConfig() {
+    Logging.setProvider(null);
+    assertTrue(Logging.getLogger("myname") instanceof Log4JLoggingProvider.Log4JLogger);
+  }
 
   @Test
   public void testLog4JProvider() {
