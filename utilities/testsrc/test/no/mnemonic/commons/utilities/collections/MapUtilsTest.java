@@ -6,14 +6,24 @@ import org.junit.Test;
 import java.util.*;
 
 import static no.mnemonic.commons.utilities.collections.MapUtils.Pair.T;
+import static no.mnemonic.commons.utilities.collections.MapUtils.pair;
 import static org.junit.Assert.*;
 
 public class MapUtilsTest {
 
   @Test
+  public void testMapExistingMap() {
+    Map<String, Integer> expected = createMap(3);
+    assertNotSame(expected, MapUtils.map(expected));
+    assertEquals(expected, MapUtils.map(expected));
+    assertEquals(new HashMap<>(), MapUtils.map((Map<String, Integer>)null));
+  }
+
+  @Test
   public void testMapReturnsNewMap() {
     Map<String, Integer> expected = createMap(3);
 
+    assertEquals(expected, MapUtils.map(pair("1", 1), pair("2", 2), pair("3", 3)));
     assertEquals(expected, MapUtils.map(T("1", 1), T("2", 2), T("3", 3)));
     assertEquals(expected, MapUtils.map(Arrays.asList(T("1", 1), T("2", 2), T("3", 3)).iterator()));
     assertEquals(expected, MapUtils.map(Arrays.asList(T("1", 1), T("2", 2), T("3", 3))));

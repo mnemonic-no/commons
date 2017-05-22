@@ -10,6 +10,18 @@ public class MapUtils {
   }
 
   /**
+   * Creates a map from a map
+   *
+   * @param map   Map to create new map from
+   * @param <K>   Type of keys.
+   * @param <V>   Type of values.
+   * @return A new map containing the entries of the provided map, or an empty map if the provided argument was null
+   */
+  public static <K, V> Map<K, V> map(Map<K, V> map) {
+    if (map == null) return new HashMap<>();
+    return new HashMap<>(map);
+  }
+  /**
    * Creates a map from key-value pairs.
    *
    * @param pairs Pairs converted to key-value entries in the map.
@@ -203,6 +215,13 @@ public class MapUtils {
    */
   public static <K, V> int size(Map<K, V> map) {
     return map == null ? 0 : map.size();
+  }
+
+  /**
+   * @return a Pair of key/val
+   */
+  public static <K, V> Pair<K, V> pair(K key, V val) {
+    return Pair.T(key, val);
   }
 
   public final static class Pair<A, B> {

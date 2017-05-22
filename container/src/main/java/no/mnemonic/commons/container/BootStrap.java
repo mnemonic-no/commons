@@ -8,11 +8,8 @@ import no.mnemonic.commons.container.providers.BeanProvider;
 import no.mnemonic.commons.container.providers.GuiceBeanProvider;
 import no.mnemonic.commons.container.providers.SpringXmlBeanProvider;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
-import no.mnemonic.commons.utilities.collections.SetUtils;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -35,7 +32,6 @@ import java.util.regex.Pattern;
 public class BootStrap implements Versioned, ComponentListener {
 
   static final String APPLICATION_PROPERTIES_FILE = "application.properties.file";
-  static final String INCLUDE_FILE_PREFIX = "include.file.";
   private static final int EXIT_CODE_ARGUMENT_ERROR = 2;
   private static final int EXIT_CODE_EXEC_ERROR = 1;
   private static final String PROP_GUICE = "guice";
@@ -124,10 +120,10 @@ public class BootStrap implements Versioned, ComponentListener {
     }
   }
 
-  protected class BootStrapException extends Exception {
+  class BootStrapException extends Exception {
     final int exitCode;
 
-    protected BootStrapException(Throwable cause, int exitCode) {
+    BootStrapException(Throwable cause, int exitCode) {
       super(cause);
       this.exitCode = exitCode;
     }
@@ -189,38 +185,20 @@ public class BootStrap implements Versioned, ComponentListener {
     return bootContainer;
   }
 
-  private Properties resolveProperties() {
+  static Properties resolveProperties() {
     String propertyFileName = System.getProperty(APPLICATION_PROPERTIES_FILE);
-      Properties properties = System.getProperties();
-      if (propertyFileName != null) {
-        properties = new Properties(properties);
-        loadProperties(properties, propertyFileName);
-      }
-      resolveIncludes(properties);
-      return properties;
-  }
-
-  private void resolveIncludes(Properties properties) {
-    SetUtils.set(properties.entrySet())
-            .stream()
-            .filter(e->String.valueOf(e.getKey()).startsWith(INCLUDE_FILE_PREFIX))
-            .forEach(e->loadProperties(properties, String.valueOf(e.getValue())));
-  }
-
-  private void loadProperties(Properties properties, String file) {
-    try (InputStream is = new FileInputStream(file)){
-      properties.load(is);
-    } catch (IOException e) {
-      throw new RuntimeException("Could not load property file: " + file);
+    Properties properties = new Properties(System.getProperties());
+    if (propertyFileName != null) {
+      PropertiesResolver.loadPropertiesFile(new File(propertyFileName), properties);
     }
-
+    return properties;
   }
 
-    private BeanProvider getSpringBootContainer(String bootDescriptorName) {
+  private BeanProvider getSpringBootContainer(String bootDescriptorName) {
     return SpringXmlBeanProvider.builder()
-        .addInput(bootDescriptorName)
-        .setProperties(resolveProperties())
-        .build();
+            .addInput(bootDescriptorName)
+            .setProperties(resolveProperties())
+            .build();
   }
 
   private BeanProvider getGuiceBootContainer(Set<String> moduleClasses) {

@@ -12,11 +12,11 @@ import org.mockito.MockitoAnnotations;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
 import static no.mnemonic.commons.container.BootStrap.APPLICATION_PROPERTIES_FILE;
-import static no.mnemonic.commons.container.BootStrap.INCLUDE_FILE_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,7 +54,7 @@ public class BootStrapTest {
   @Test
   public void testBootStrap() throws BootStrap.BootStrapException, IOException {
     System.setProperty("propertyvalue", "1");
-    ComponentContainer container = new MyBootStrap().boot(new String[]{
+    new MyBootStrap().boot(new String[]{
             "guice",
             "module=" + MyModule.class.getName()
     });
@@ -63,7 +63,7 @@ public class BootStrapTest {
 
   @Test
   public void testBootStrapParsesPropertyFile() throws BootStrap.BootStrapException, IOException {
-    File propsFile = createPropertyFile("propertyvalue", "1");
+    File propsFile = createPropertyFile("prop", "propertyvalue", "1");
     System.setProperty(APPLICATION_PROPERTIES_FILE, propsFile.getAbsolutePath());
     ComponentContainer container = new MyBootStrap().boot(new String[]{
             "guice",
@@ -73,23 +73,21 @@ public class BootStrapTest {
     assertEquals(1, component.myValue);
   }
 
-  @Test
-  public void testBootStrapParsesIncludedPropertyFile() throws BootStrap.BootStrapException, IOException {
-    File includedPropsFile = createPropertyFile("propertyvalue", "1");
-    File mainPropsFile = createPropertyFile(INCLUDE_FILE_PREFIX  + 1, includedPropsFile.getAbsolutePath());
+  @Test(expected = BootStrap.BootStrapException.class)
+  public void testBootStrapFailsOnUnknownIncludeFile() throws BootStrap.BootStrapException, IOException {
+    File mainPropsFile = createPropertyFile("main", PropertiesResolver.INCLUDE_FILE_PREFIX + 1, "/tmp/bogus/file/path");
     System.setProperty(APPLICATION_PROPERTIES_FILE, mainPropsFile.getAbsolutePath());
-    ComponentContainer container = new MyBootStrap().boot(new String[]{
+    new BootStrapTest.MyBootStrap().boot(new String[]{
             "guice",
-            "module=" + MyModule.class.getName()
+            "module=" + BootStrapTest.MyModule.class.getName()
     });
-    MyComponent component = (MyComponent) container.getComponents().get(MyComponent.class.getSimpleName());
-    assertEquals(1, component.myValue);
   }
 
-  private File createPropertyFile(String key, String value) throws IOException {
+
+  private File createPropertyFile(String id, String key, String value) throws IOException {
     Properties props = new Properties();
-    props.setProperty(key, value);
-    File propsFile = File.createTempFile(getClass().getName(), "properties");
+    props.put(key, value);
+    File propsFile = File.createTempFile(getClass().getName(), "-" + id);
     props.store(new FileOutputStream(propsFile), "");
     return propsFile;
   }
@@ -103,6 +101,7 @@ public class BootStrapTest {
 
   static class MyComponent {
     int myValue;
+
     @Inject
     public MyComponent(@Named("propertyvalue") int myValue) {
       this.myValue = myValue;
