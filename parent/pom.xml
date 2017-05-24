@@ -4,8 +4,35 @@
   <artifactId>parent</artifactId>
   <packaging>pom</packaging>
   <version>0.0.21-SNAPSHOT</version>
-  <name>parent</name>
-  <url>http://www.mnemonic.no</url>
+
+  <name>mnemonic commons</name>
+  <description>Reusable Java utilities</description>
+  <url>https://github.com/mnemonic-no</url>
+  <inceptionYear>2017</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>ISC</name>
+      <url>https://opensource.org/licenses/ISC</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>mnemonic as</name>
+    <url>https://www.mnemonic.no</url>
+  </organization>
+
+  <developers>
+    <developer>
+      <name>mnemonic development team</name>
+      <email>opensource@mnemonic.no</email>
+      <url>https://github.com/mnemonic-no</url>
+      <organization>mnemonic as</organization>
+      <organizationUrl>https://www.mnemonic.no</organizationUrl>
+      <timezone>Europe/Oslo</timezone>
+    </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -48,6 +75,19 @@
   </distributionManagement>
 
   <build>
+    <resources>
+      <!-- Always include license file in generated bundles. -->
+      <resource>
+        <directory>../</directory>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
+      <!-- Include resources from standard resources folder in generated bundles. -->
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+    </resources>
     <plugins>
       <!-- configure compiler -->
       <plugin>

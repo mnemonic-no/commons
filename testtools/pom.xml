@@ -2,8 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>testtools</artifactId>
   <packaging>jar</packaging>
-  <name>testtools</name>
-  <url>http://www.mnemonic.no</url>
+
+  <name>mnemonic commons - test tools</name>
+  <description>Utilities for writing unit tests</description>
 
   <parent>
     <groupId>no.mnemonic.commons</groupId>
@@ -11,10 +12,6 @@
     <version>0.0.21-SNAPSHOT</version>
     <relativePath>../parent</relativePath>
   </parent>
-
-  <build>
-    <sourceDirectory>src</sourceDirectory>
-  </build>
 
   <dependencies>
     <dependency>
@@ -38,4 +35,5 @@
       <version>${achilles.version}</version>
     </dependency>
   </dependencies>
+
 </project>

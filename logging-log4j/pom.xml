@@ -1,14 +1,17 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>logging-log4j</artifactId>
+  <packaging>jar</packaging>
+
+  <name>mnemonic commons - logging-log4j</name>
+  <description>Logging implementation based on Log4j</description>
+
   <parent>
-    <artifactId>parent</artifactId>
     <groupId>no.mnemonic.commons</groupId>
+    <artifactId>parent</artifactId>
     <version>0.0.21-SNAPSHOT</version>
     <relativePath>../parent</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
-
-  <artifactId>logging-log4j</artifactId>
 
   <dependencies>
     <dependency>

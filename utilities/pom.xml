@@ -2,8 +2,9 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>utilities</artifactId>
   <packaging>jar</packaging>
-  <name>utilities</name>
-  <url>http://www.mnemonic.no</url>
+
+  <name>mnemonic commons - utilities</name>
+  <description>Simple stand-alone utility functions</description>
 
   <parent>
     <groupId>no.mnemonic.commons</groupId>
@@ -15,29 +16,9 @@
   <build>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>testsrc</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>src</directory>
-        <includes>
-          <include>**/*.properties</include>
-          <include>**/*.xml</include>
-        </includes>
-      </resource>
-    </resources>
-    <testResources>
-      <testResource>
-        <directory>testsrc</directory>
-        <includes>
-          <include>**/*.jar</include>
-        </includes>
-      </testResource>
-    </testResources>
   </build>
 
-  <!-- configure dependencies -->
   <dependencies>
-    <!-- runtime dependencies -->
-    <!-- test jars -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -51,4 +32,5 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
 </project>
