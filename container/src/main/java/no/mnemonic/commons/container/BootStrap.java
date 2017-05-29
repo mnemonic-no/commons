@@ -185,7 +185,7 @@ public class BootStrap implements Versioned, ComponentListener {
     return bootContainer;
   }
 
-  static Properties resolveProperties() {
+  private static Properties resolveProperties() {
     String propertyFileName = System.getProperty(APPLICATION_PROPERTIES_FILE);
     Properties properties = new Properties(System.getProperties());
     if (propertyFileName != null) {

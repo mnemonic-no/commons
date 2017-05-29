@@ -1,5 +1,7 @@
 package no.mnemonic.commons.container;
 
+import no.mnemonic.commons.logging.Logger;
+import no.mnemonic.commons.logging.Logging;
 import no.mnemonic.commons.utilities.collections.MapUtils;
 
 import java.io.File;
@@ -13,6 +15,7 @@ import java.util.Set;
 public class PropertiesResolver {
 
   static final String INCLUDE_FILE_PREFIX = "include.file.";
+  private static final Logger LOGGER = Logging.getLogger(PropertiesResolver.class);
 
   public static Properties loadPropertiesFile(File file) {
     return loadPropertiesFile(file, new Properties());
@@ -25,7 +28,11 @@ public class PropertiesResolver {
   }
 
   private static void loadPropertiesFile(Properties properties, File file, Set<File> loadedFiles) {
-    if (loadedFiles.contains(file)) return;
+    if (loadedFiles.contains(file)) {
+      LOGGER.info("Skipping previously loaded file: " + file);
+      return;
+    }
+    LOGGER.info("Loading properties from file: " + file);
     Properties newProps = new Properties();
     try (InputStream is = new FileInputStream(file)) {
       newProps.load(is);
