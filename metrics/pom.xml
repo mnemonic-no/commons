@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>metrics</artifactId>
+  <packaging>jar</packaging>
+
+  <name>mnemonic commons - metrics</name>
+  <description>Framework and utilities for component and performance metrics</description>
+
+  <parent>
+    <groupId>no.mnemonic.commons</groupId>
+    <artifactId>parent</artifactId>
+    <version>0.0.25-SNAPSHOT</version>
+    <relativePath>../parent</relativePath>
+  </parent>
+
+  <dependencies>
+    <dependency>
+      <groupId>no.mnemonic.commons</groupId>
+      <artifactId>logging</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+</project>
