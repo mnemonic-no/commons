@@ -28,6 +28,13 @@
 
     <!-- test dependencies -->
     <dependency>
+      <groupId>no.mnemonic.commons</groupId>
+      <artifactId>utilities</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <!-- test utils -->
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
