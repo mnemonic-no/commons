@@ -1,6 +1,8 @@
 package no.mnemonic.commons.utilities.lambda;
 
 import java.util.stream.Collector;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 class TryStreamImpl<T, E extends Exception> implements TryStream<T, E> {
@@ -12,14 +14,22 @@ class TryStreamImpl<T, E extends Exception> implements TryStream<T, E> {
 
   @Override
   public <R> TryStream<R, E> map(ExceptionalFunction<? super T, ? extends R, E> mapper) {
-    return new TryStreamImpl<>(stream.map(v -> {
-      try {
-        return mapper.apply(v);
-      } catch (Exception e) {
-        if (e instanceof RuntimeException) throw (RuntimeException) e;
-        throw new StreamException(e);
-      }
-    }));
+    return new TryStreamImpl<>(stream.map(v -> applyExceptionalFunction(mapper, v)));
+  }
+
+  @Override
+  public Stream<T> stream() {
+    return stream;
+  }
+
+  @Override
+  public LongStream mapToLong(ExceptionalFunction<? super T, Long, E> function) throws E {
+    return stream.mapToLong(v -> applyExceptionalFunction(function, v));
+  }
+
+  @Override
+  public IntStream mapToInt(ExceptionalFunction<? super T, Integer, E> function) throws E {
+    return stream.mapToInt(v -> applyExceptionalFunction(function, v));
   }
 
   @Override
@@ -40,15 +50,14 @@ class TryStreamImpl<T, E extends Exception> implements TryStream<T, E> {
       return stream.collect(collector);
     } catch (StreamException e) {
       //noinspection unchecked
-      throw (E)e.getCause();
+      throw (E) e.getCause();
     }
   }
-
 
   @Override
   public void forEach(ExceptionalConsumer<? super T, E> consumer) throws E {
     try {
-      stream.forEach(el->{
+      stream.forEach(el -> {
         try {
           consumer.accept(el);
         } catch (Exception e) {
@@ -58,7 +67,17 @@ class TryStreamImpl<T, E extends Exception> implements TryStream<T, E> {
       });
     } catch (StreamException e) {
       //noinspection unchecked
-      throw (E)e.getCause();
+      throw (E) e.getCause();
+    }
+  }
+
+
+  private <R> R applyExceptionalFunction(ExceptionalFunction<? super T, ? extends R, E> mapper, T v) {
+    try {
+      return mapper.apply(v);
+    } catch (Exception e) {
+      if (e instanceof RuntimeException) throw (RuntimeException) e;
+      throw new StreamException(e);
     }
   }
 

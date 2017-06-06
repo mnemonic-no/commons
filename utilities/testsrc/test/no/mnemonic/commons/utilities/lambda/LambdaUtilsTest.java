@@ -8,6 +8,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static no.mnemonic.commons.utilities.lambda.LambdaUtils.forEachTry;
 import static no.mnemonic.commons.utilities.lambda.LambdaUtils.tryStream;
@@ -30,24 +31,25 @@ public class LambdaUtilsTest {
 
   @Test
   public void testForEachTry() throws Exception {
-    forEachTry(list(1,2,3), consumer);
+    forEachTry(list(1, 2, 3), consumer);
     verify(consumer, times(3)).accept(any());
   }
 
   @Test
   public void testForEachTryNoValues() throws Exception {
-    forEachTry(null, i->{});
+    forEachTry(null, i -> {
+    });
     verify(consumer, never()).accept(any());
   }
 
   @Test
   public void testForEachTryNoConsumer() throws Exception {
-    forEachTry(list(1,2,3), null);
+    forEachTry(list(1, 2, 3), null);
   }
 
   @Test
   public void testForEachTryWithExceptionConsumer() throws Exception {
-    forEachTry(list(1,2,3), consumer, exceptionConsumer);
+    forEachTry(list(1, 2, 3), consumer, exceptionConsumer);
     verify(consumer, times(3)).accept(any());
     verify(exceptionConsumer, never()).accept(any());
   }
@@ -55,19 +57,29 @@ public class LambdaUtilsTest {
   @Test
   public void testForEachTryWithExceptionConsumerOnException() throws Exception {
     doThrow(new Exception("error")).when(consumer).accept(any());
-    forEachTry(list(1,2,3), consumer, exceptionConsumer);
+    forEachTry(list(1, 2, 3), consumer, exceptionConsumer);
     verify(consumer, times(3)).accept(any());
     verify(exceptionConsumer, times(3)).accept(any());
   }
 
   @Test
   public void testTryStreamCollect() throws Exception {
-    assertEquals(list(1,2,3), tryStream(list(1,2,3).stream()).collect(Collectors.toList()));
+    assertEquals(list(1, 2, 3), tryStream(list(1, 2, 3).stream()).collect(Collectors.toList()));
+  }
+
+  @Test
+  public void testTryStreamMapToLong() throws Exception {
+    assertEquals(6L, tryStream(list(1, 2, 3).stream()).mapToLong(Integer::longValue).sum());
+  }
+
+  @Test
+  public void testTryStreamMapToInt() throws Exception {
+    assertEquals(6, tryStream(list(1, 2, 3).stream()).mapToInt(v -> v).sum());
   }
 
   @Test
   public void testTryStreamForEach() throws Exception {
-    tryStream(list(1,2,3).stream()).forEach(i->consumer.accept(i));
+    tryStream(list(1, 2, 3).stream()).forEach(i -> consumer.accept(i));
     verify(consumer).accept(1);
     verify(consumer).accept(2);
     verify(consumer).accept(3);
@@ -75,58 +87,58 @@ public class LambdaUtilsTest {
 
   @Test
   public void testTryStreamWithNullInput() throws Exception {
-    assertNull(tryStream(null));
+    assertNull(tryStream((Stream<? extends Object>) null));
   }
 
   @Test
   public void testTryStreamWithExceptionalFunctionOnCollect() throws Exception {
-    assertEquals(list(1L,2L,3L), tryStream(list(1,2,3).stream()).map(this::myFunction).collect(Collectors.toList()));
+    assertEquals(list(1L, 2L, 3L), tryStream(list(1, 2, 3).stream()).map(this::myFunction).collect(Collectors.toList()));
   }
 
   @Test
   public void testTryStreamWithExceptionalPredicateOnCollect() throws Exception {
-    assertEquals(list(1,2,3), tryStream(list(1,2,3).stream()).filter(this::myPredicate).collect(Collectors.toList()));
+    assertEquals(list(1, 2, 3), tryStream(list(1, 2, 3).stream()).filter(this::myPredicate).collect(Collectors.toList()));
   }
 
   @Test(expected = MyException.class)
   public void testTryStreamMappingThrowingExceptionOnCollect() throws Exception {
-    tryStream(list(1,2,3).stream()).map(this::myErrorFunction).collect(Collectors.toList());
+    tryStream(list(1, 2, 3).stream()).map(this::myErrorFunction).collect(Collectors.toList());
   }
 
   @Test(expected = MyException.class)
   public void testTryStreamPredicateThrowingExceptionOnCollect() throws Exception {
-    tryStream(list(1,2,3).stream()).filter(this::myErrorPredicate).collect(Collectors.toList());
+    tryStream(list(1, 2, 3).stream()).filter(this::myErrorPredicate).collect(Collectors.toList());
   }
 
   @Test(expected = MyException.class)
   public void testTryStreamPredicateThrowingExceptionOnForEach() throws Exception {
-    tryStream(list(1,2,3).stream()).filter(this::myErrorPredicate).forEach(e->consumer.accept(e));
+    tryStream(list(1, 2, 3).stream()).filter(this::myErrorPredicate).forEach(e -> consumer.accept(e));
   }
 
   @Test(expected = MyException.class)
   public void testTryStreamConsumerThrowingExceptionOnForEach() throws Exception {
-    tryStream(list(1,2,3).stream()).forEach(this::myErrorConsumer);
+    tryStream(list(1, 2, 3).stream()).forEach(this::myErrorConsumer);
   }
 
   @Test
   public void testTryTo() throws Exception {
-    assertTrue(tryTo(()->myFunction(1)));
+    assertTrue(tryTo(() -> myFunction(1)));
   }
 
   @Test
   public void testTryToWithException() throws Exception {
-    assertFalse(tryTo(()-> myErrorFunction(1)));
+    assertFalse(tryTo(() -> myErrorFunction(1)));
   }
 
   @Test
   public void testTryToWithExceptionConsumer() throws Exception {
-    assertFalse(tryTo(()-> myErrorFunction(1), exceptionConsumer));
+    assertFalse(tryTo(() -> myErrorFunction(1), exceptionConsumer));
     verify(exceptionConsumer).accept(any());
   }
 
   @Test
   public void testTryToWithNullExceptionConsumer() throws Exception {
-    assertFalse(tryTo(()-> myErrorFunction(1), null));
+    assertFalse(tryTo(() -> myErrorFunction(1), null));
   }
 
   @Test
@@ -156,6 +168,7 @@ public class LambdaUtilsTest {
     throw new MyException();
   }
 
-  private static class MyException extends Exception {}
+  private static class MyException extends Exception {
+  }
 
 }

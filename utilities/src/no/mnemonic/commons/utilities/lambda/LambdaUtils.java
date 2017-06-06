@@ -13,7 +13,7 @@ public class LambdaUtils {
    * Convenience method to call a method/lambda without having to wrap with try/catch
    *
    * @param callable task to call
-   * @return true if task was successfull, false if exception was caught
+   * @return true if task was successful, false if exception was caught
    */
   public static boolean tryTo(ExceptionalTask callable) {
     return tryTo(callable, e->{});
@@ -29,7 +29,7 @@ public class LambdaUtils {
    *
    * @param callable task to call
    * @param onException consumer to provide any exception caught
-   * @return true if task was successfull, false if exception was caught
+   * @return true if task was successful, false if exception was caught
    */
   public static boolean tryTo(ExceptionalTask callable, Consumer<Throwable> onException) {
     if (callable == null) return false;
@@ -92,7 +92,12 @@ public class LambdaUtils {
     return new TryStreamImpl<>(stream);
   }
 
-  //helpers
+  public static <T, E extends Exception> TryStream<T, E> tryStream(Collection<T> collection) {
+    if (collection == null) return null;
+    return tryStream(collection.stream());
+  }
+
+    //helpers
 
   private static void notifyException(Consumer<Throwable> onException, Throwable t) {
     if (onException == null) return;
