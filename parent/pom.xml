@@ -7,7 +7,7 @@
 
   <name>mnemonic commons</name>
   <description>Reusable Java utilities</description>
-  <url>https://github.com/mnemonic-no</url>
+  <url>https://github.com/mnemonic-no/commons</url>
   <inceptionYear>2017</inceptionYear>
 
   <licenses>
@@ -34,39 +34,51 @@
     </developer>
   </developers>
 
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-    <guice.version>4.0</guice.version>
-    <spring.version>4.2.5.RELEASE</spring.version>
-    <log4j.version>2.7</log4j.version>
-    <achilles.version>5.1.1</achilles.version>
+    <!-- external dependencies -->
+    <achilles.version>5.2.1</achilles.version>
+    <guice.version>4.1.0</guice.version>
     <junit.version>4.12</junit.version>
-    <mockito.version>2.2.8</mockito.version>
+    <log4j.version>2.8.2</log4j.version>
+    <mockito.version>2.8.9</mockito.version>
+    <spring.version>4.3.8.RELEASE</spring.version>
 
+    <!-- build dependencies -->
+    <maven.clean.version>3.0.0</maven.clean.version>
+    <maven.compile.version>3.6.1</maven.compile.version>
+    <maven.install.version>2.5.2</maven.install.version>
+    <maven.jar.version>3.0.2</maven.jar.version>
+    <maven.javadoc.version>2.10.4</maven.javadoc.version>
     <maven.license.version>1.12</maven.license.version>
+    <maven.release.version>2.5.3</maven.release.version>
+    <maven.resources.version>3.0.2</maven.resources.version>
+    <maven.source.version>3.0.1</maven.source.version>
+    <maven.surefire.version>2.20</maven.surefire.version>
   </properties>
 
   <modules>
-    <module>../testtools</module>
-    <module>../utilities</module>
     <module>../component</module>
+    <module>../container</module>
     <module>../logging</module>
     <module>../logging-log4j</module>
     <module>../metrics</module>
-    <module>../container</module>
+    <module>../testtools</module>
+    <module>../utilities</module>
   </modules>
 
   <scm>
-    <developerConnection>scm:git:ssh://stash.mnemonic.no:8022/joss/commons.git</developerConnection>
-    <tag>HEAD</tag>
+    <connection>scm:git:git://github.com/mnemonic-no/commons.git</connection>
+    <developerConnection>scm:git:ssh://github.com:mnemonic-no/commons.git</developerConnection>
+    <url>https://github.com/mnemonic-no/commons</url>
   </scm>
 
   <distributionManagement>
-    <site>
-      <id>javadoc</id>
-      <url>file:///var/www/site/commons/parent</url>
-    </site>
     <repository>
       <id>mnemonic</id>
       <url>http://artifactory.mnemonic.no/artifactory/mnemonic</url>
@@ -92,28 +104,25 @@
       </resource>
     </resources>
     <plugins>
-      <!-- configure compiler -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
+        <version>${maven.compile.version}</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
           <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
-      <!-- run tests -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.16</version>
+        <version>${maven.surefire.version}</version>
       </plugin>
-      <!-- configure the jar manifest -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.3.2</version>
+        <version>${maven.jar.version}</version>
         <configuration>
           <archive>
             <manifest>
@@ -122,48 +131,39 @@
           </archive>
         </configuration>
       </plugin>
-      <!-- prepare release -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.1</version>
+        <version>${maven.release.version}</version>
         <configuration>
           <pushChanges>false</pushChanges>
         </configuration>
       </plugin>
-      <!-- prepare release -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.4.1</version>
+        <version>${maven.clean.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <version>2.3.1</version>
+        <version>${maven.install.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>${maven.resources.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
+        <version>${maven.javadoc.version}</version>
         <configuration>
           <show>protected</show>
           <aggregate>true</aggregate>
           <failOnError>false</failOnError>
         </configuration>
         <executions>
-          <execution>
-            <id>aggregate</id>
-            <goals>
-              <goal>aggregate</goal>
-            </goals>
-            <phase>site</phase>
-          </execution>
           <execution>
             <id>attach-javadocs</id>
             <goals>
@@ -175,7 +175,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>2.3</version>
+        <version>${maven.source.version}</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -184,16 +184,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.7</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-site-plugin</artifactId>
-        <version>3.4</version>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -227,40 +217,5 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>test-coverage</id>
-      <build>
-        <plugins>
-          <!-- configure the code coverage plugin -->
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.7.6.201602180812</version>
-            <configuration>
-              <destFile>../parent/target/jacoco.exec</destFile>
-              <append>true</append>
-            </configuration>
-            <executions>
-              <execution>
-                <id>jacoco-initialize</id>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>report</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
 </project>

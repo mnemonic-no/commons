@@ -27,7 +27,7 @@ None, dependencies will be handled by Maven automatically.
 
 ## Known issues
 
-See [Issues](FIXME: URL).
+See [Issues](https://github.com/mnemonic-no/commons/issues).
 
 ## Contributing
 
