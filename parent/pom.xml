@@ -138,6 +138,7 @@
         <version>${maven.release.version}</version>
         <configuration>
           <pushChanges>false</pushChanges>
+          <localCheckout>true</localCheckout>
         </configuration>
       </plugin>
       <plugin>
