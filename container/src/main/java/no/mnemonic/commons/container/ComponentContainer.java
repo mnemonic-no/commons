@@ -6,10 +6,7 @@ import no.mnemonic.commons.container.plugins.ComponentContainerPlugin;
 import no.mnemonic.commons.container.plugins.ComponentDependencyResolver;
 import no.mnemonic.commons.container.plugins.ComponentLifecycleHandler;
 import no.mnemonic.commons.container.plugins.ComponentValidator;
-import no.mnemonic.commons.container.plugins.impl.ComponentLifecycleAspectHandler;
-import no.mnemonic.commons.container.plugins.impl.ComponentValidationAspectValidator;
-import no.mnemonic.commons.container.plugins.impl.FieldAnnotationDependencyResolver;
-import no.mnemonic.commons.container.plugins.impl.MethodAnnotationDependencyResolver;
+import no.mnemonic.commons.container.plugins.impl.*;
 import no.mnemonic.commons.container.providers.BeanProvider;
 import no.mnemonic.commons.container.providers.SimpleBeanProvider;
 import no.mnemonic.commons.logging.Logger;
@@ -24,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static no.mnemonic.commons.component.ComponentState.*;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
+import static no.mnemonic.commons.utilities.lambda.LambdaUtils.*;
 
 /**
  * ComponentContainer
@@ -55,8 +53,8 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   //creators
 
   /**
-   * @param beans             beans which are administered by this container
-   * @param parent            component container
+   * @param beans  beans which are administered by this container
+   * @param parent component container
    */
   private ComponentContainer(BeanProvider beans, ComponentContainer parent) {
     this.beans = beans;
@@ -119,7 +117,6 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       if (getLogger().isDebug())
         getLogger().debug("Component " + component + " notified us of current shutdown");
     }
-    if (objectNodeMap.containsKey(component)) fireContainerStopping();
   }
 
   @Override
@@ -140,9 +137,9 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   /**
    * Initialize this container, and any subcontainers it may have
    */
-  public void initialize() {
+  public ComponentContainer initialize() {
     try {
-      if (getComponentState() != NOT_STARTED) return;
+      if (getComponentState() != NOT_STARTED) return this;
       // update state
       setState(INITIALIZING);
 
@@ -169,26 +166,25 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       // update state
       setState(STARTED);
       // notify listeners
-      for (ContainerListener l : containerListeners) {
-        l.notifyContainerStarted(this);
-      }
+      containerListeners.forEach(l -> tryTo(() -> l.notifyContainerStarted(this), e -> LOGGER.error(e, "Error calling notifyContainerStarted")));
     } catch (RuntimeException e) {
       getLogger().error("Error initializing container", e);
       //if startup fails, make sure to exit the container
       destroy();
       throw e;
     }
+    return this;
   }
 
   /**
    * Destroy only the current container (along with any child containers which cannot survive without their parent)
    * Parent containers are untouched
    */
-  public void destroy() {
+  public ComponentContainer destroy() {
     try {
       // only allow one thread to attempt shutdown for any container
       synchronized (STATE_LOCK) {
-        if (getComponentState().isTerminal()) return;
+        if (getComponentState().isTerminal()) return this;
         setState(STOPPING);
         STATE_LOCK.notifyAll();
       }
@@ -221,10 +217,9 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       nodes.clear();
 
       //notify componentListeners that we are done
-      componentListeners.forEach(l -> l.notifyComponentStopped(this));
-      containerListeners.forEach(l -> l.notifyContainerDestroyed(this));
+      fireContainerStopped();
     }
-
+    return this;
   }
 
   // ***************************** private methods
@@ -235,11 +230,11 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
   Map<String, Object> getComponents() {
     synchronized (STATE_LOCK) {
-      return MapUtils.map(nodes.entrySet(), e->MapUtils.Pair.T(e.getKey(), e.getValue().getObject()));
+      return MapUtils.map(nodes.entrySet(), e -> MapUtils.Pair.T(e.getKey(), e.getValue().getObject()));
     }
   }
 
-  Collection<ComponentContainer> getChildContainers() {
+  private Collection<ComponentContainer> getChildContainers() {
     synchronized (STATE_LOCK) {
       return Collections.unmodifiableCollection(list(childContainers));
     }
@@ -250,11 +245,14 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     if (System.currentTimeMillis() - lastStoppingNotificationTimestamp.get() < 1000) return;
     if (getComponentState().isTerminal()) {
       lastStoppingNotificationTimestamp.set(System.currentTimeMillis());
-      new Thread(() -> {
-        componentListeners.forEach(l -> l.notifyComponentStopped(ComponentContainer.this));
-        containerListeners.forEach(l -> l.notifyContainerDestroying(ComponentContainer.this));
-      }).start();
+      componentListeners.forEach(l -> tryTo(() -> l.notifyComponentStopping(ComponentContainer.this), e -> LOGGER.error(e, "Error calling notifyComponentStopped")));
+      containerListeners.forEach(l -> tryTo(() -> l.notifyContainerDestroying(ComponentContainer.this), e -> LOGGER.error(e, "Error calling notifyContainerDestroying")));
     }
+  }
+
+  private void fireContainerStopped() {
+    componentListeners.forEach(l -> tryTo(() -> l.notifyComponentStopped(this), e -> LOGGER.error(e, "Error calling notifyComponentStopped")));
+    containerListeners.forEach(l -> tryTo(() -> l.notifyContainerDestroyed(this), e -> LOGGER.error(e, "Error calling notifyContainerDestroyed")));
   }
 
   private void setState(ComponentState state) {
@@ -268,10 +266,14 @@ public class ComponentContainer implements Component, ComponentListener, Compone
    * Set all special purpose objects to special interfaces
    */
   private void handleContainerPlugins() {
-    beans.getBeans(ComponentContainerPlugin.class).forEach((k, v)->{
-      //noinspection unchecked
-      registerPlugin(v);
-    });
+    //make all container aware beans aware of its parent container
+    beans.getBeans(ContainerAware.class).forEach((k, v) -> v.registerContainerAware(this));
+    //register all plugins
+    beans.getBeans(ComponentContainerPlugin.class).forEach((k, v) -> registerPlugin(v));
+    //add handler plugin to register all container listeners
+    registerPlugin(new ContainerListenerHandler(this));
+    //add handler plugin to register all component listeners
+    registerPlugin(new ComponentListenerAspectHandler(this));
 
     lifecycleManagers.addAll(beans.getBeans(ComponentLifecycleHandler.class).values());
     lifecycleManagers.add(new ComponentLifecycleAspectHandler());
@@ -306,7 +308,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
   private void registerPlugin(ComponentContainerPlugin plugin) {
     Map<String, Object> targets = new HashMap<>();
-    beans.getBeans().forEach((k,v) -> {
+    beans.getBeans().forEach((k, v) -> {
       if (plugin.appliesTo(v)) targets.put(k, v);
     });
     plugin.registerBeans(targets);
@@ -411,19 +413,19 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   private void resolveDependsOn(ComponentNode node) {
     //check for Dependency annotations on getters
     getDependencies(node).stream()
-        .filter(dep -> dep != null)
-        .forEach(dep -> {
-          if (dep instanceof Collection) {
-            //add dependency to each member of collection
-            ((Collection<?>) dep).stream()
-                .map(objectNodeMap::get)
-                .filter(o -> o != null)
-                .forEach(depnode -> addDependency(node, depnode));
-          } else {
-            //add dependency to object
-            ObjectUtils.ifNotNullDo(objectNodeMap.get(dep), depnode -> addDependency(node, depnode));
-          }
-    });
+            .filter(dep -> dep != null)
+            .forEach(dep -> {
+              if (dep instanceof Collection) {
+                //add dependency to each member of collection
+                ((Collection<?>) dep).stream()
+                        .map(objectNodeMap::get)
+                        .filter(o -> o != null)
+                        .forEach(depnode -> addDependency(node, depnode));
+              } else {
+                //add dependency to object
+                ObjectUtils.ifNotNullDo(objectNodeMap.get(dep), depnode -> addDependency(node, depnode));
+              }
+            });
   }
 
   private void addDependency(ComponentNode node, ComponentNode dependencyNode) {
@@ -434,7 +436,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   private Collection<?> getDependencies(ComponentNode node) {
     Collection<Object> dependencies = new HashSet<>();
     dependencyResolvers.forEach(r -> dependencies.addAll(
-        ObjectUtils.ifNull(r.resolveDependencies(node.getObject()), new HashSet<>())
+            ObjectUtils.ifNull(r.resolveDependencies(node.getObject()), new HashSet<>())
     ));
     return dependencies;
   }

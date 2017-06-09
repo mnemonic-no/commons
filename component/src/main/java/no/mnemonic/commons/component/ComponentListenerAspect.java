@@ -8,11 +8,6 @@ import java.util.Collection;
  * By contract, this object should notify the listener on relevant state changes,
  * see {@link ComponentListener} for definition of relevant state changes.
  *
- * Created by IntelliJ IDEA.
- * User: joakim
- * Date: 15.des.2004
- * Time: 14:10:36
- * Version: $Id$
  */
 public interface ComponentListenerAspect {
 
