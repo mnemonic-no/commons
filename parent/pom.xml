@@ -3,7 +3,7 @@
   <groupId>no.mnemonic.commons</groupId>
   <artifactId>parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.0.30-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
 
   <name>mnemonic commons</name>
   <description>Reusable Java utilities</description>
@@ -52,10 +52,13 @@
     <!-- build dependencies -->
     <maven.clean.version>3.0.0</maven.clean.version>
     <maven.compile.version>3.6.1</maven.compile.version>
+    <maven.deploy.version>2.8.2</maven.deploy.version>
+    <maven.gpg.version>1.6</maven.gpg.version>
     <maven.install.version>2.5.2</maven.install.version>
     <maven.jar.version>3.0.2</maven.jar.version>
     <maven.javadoc.version>2.10.4</maven.javadoc.version>
     <maven.license.version>1.12</maven.license.version>
+    <maven.nexus.staging.version>1.6.8</maven.nexus.staging.version>
     <maven.release.version>2.5.3</maven.release.version>
     <maven.resources.version>3.0.2</maven.resources.version>
     <maven.source.version>3.0.1</maven.source.version>
@@ -78,17 +81,6 @@
     <url>https://github.com/mnemonic-no/commons</url>
     <tag>HEAD</tag>
   </scm>
-
-  <distributionManagement>
-    <repository>
-      <id>mnemonic</id>
-      <url>http://artifactory.mnemonic.no/artifactory/mnemonic</url>
-    </repository>
-    <snapshotRepository>
-      <id>mnemonic-snapshots</id>
-      <url>http://artifactory.mnemonic.no/artifactory/mnemonic-snapshots</url>
-    </snapshotRepository>
-  </distributionManagement>
 
   <build>
     <resources>
@@ -137,6 +129,9 @@
         <artifactId>maven-release-plugin</artifactId>
         <version>${maven.release.version}</version>
         <configuration>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <resume>false</resume>
+          <!-- Don't interact with the remote repository, use release.sh instead. -->
           <pushChanges>false</pushChanges>
           <localCheckout>true</localCheckout>
         </configuration>
@@ -150,6 +145,11 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
         <version>${maven.install.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven.deploy.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -219,5 +219,65 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!-- Use this profile to push to internal Artifactory during deploy. -->
+      <id>publish-internal</id>
+      <distributionManagement>
+        <repository>
+          <id>mnemonic</id>
+          <url>http://artifactory.mnemonic.no/artifactory/mnemonic</url>
+        </repository>
+        <snapshotRepository>
+          <id>mnemonic-snapshots</id>
+          <url>http://artifactory.mnemonic.no/artifactory/mnemonic-snapshots</url>
+        </snapshotRepository>
+      </distributionManagement>
+    </profile>
+    <profile>
+      <!-- Use this profile to push to the central repository (including signing of artifacts). -->
+      <id>publish-external</id>
+      <distributionManagement>
+        <repository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+        <snapshotRepository>
+          <id>ossrh</id>
+          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+      </distributionManagement>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>${maven.gpg.version}</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>${maven.nexus.staging.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
