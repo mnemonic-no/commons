@@ -1,6 +1,5 @@
-package test.no.mnemonic.commons.utilities;
+package no.mnemonic.commons.utilities;
 
-import no.mnemonic.commons.utilities.ClassLoaderContext;
 import org.junit.Test;
 
 import java.net.URL;

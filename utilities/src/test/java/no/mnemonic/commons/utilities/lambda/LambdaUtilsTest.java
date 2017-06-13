@@ -1,6 +1,5 @@
-package test.no.mnemonic.commons.utilities.lambda;
+package no.mnemonic.commons.utilities.lambda;
 
-import no.mnemonic.commons.utilities.lambda.ExceptionalConsumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;

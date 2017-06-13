@@ -1,7 +1,5 @@
-package test.no.mnemonic.commons.utilities;
+package no.mnemonic.commons.utilities;
 
-import no.mnemonic.commons.utilities.AppendMembers;
-import no.mnemonic.commons.utilities.AppendUtils;
 import org.junit.Test;
 
 import java.util.function.Consumer;

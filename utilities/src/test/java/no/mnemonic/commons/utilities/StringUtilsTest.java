@@ -1,6 +1,5 @@
-package test.no.mnemonic.commons.utilities;
+package no.mnemonic.commons.utilities;
 
-import no.mnemonic.commons.utilities.StringUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.*;

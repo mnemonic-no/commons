@@ -1,6 +1,5 @@
-package test.no.mnemonic.commons.utilities;
+package no.mnemonic.commons.utilities;
 
-import no.mnemonic.commons.utilities.ObjectUtils;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.LongAdder;

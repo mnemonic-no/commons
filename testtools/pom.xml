@@ -10,12 +10,7 @@
     <groupId>no.mnemonic.commons</groupId>
     <artifactId>parent</artifactId>
     <version>0.1.1-SNAPSHOT</version>
-    <relativePath>../parent</relativePath>
   </parent>
-
-  <build>
-    <sourceDirectory>src</sourceDirectory>
-  </build>
 
   <dependencies>
     <dependency>

@@ -1,6 +1,5 @@
-package test.no.mnemonic.commons.utilities.collections;
+package no.mnemonic.commons.utilities.collections;
 
-import no.mnemonic.commons.utilities.collections.CollectionUtils;
 import org.junit.Test;
 
 import java.util.Arrays;
