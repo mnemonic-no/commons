@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.NoSuchElementException;
+import java.util.Random;
 
 public class AvailablePortFinder {
 
   private static final int MIN_PORT = 1;
   private static final int MAX_PORT = 65535;
+  private static final int OFFSET_RANGE = 256;
+  private static final Random RANDOM = new Random();
 
   private AvailablePortFinder() {
   }
@@ -16,7 +19,7 @@ public class AvailablePortFinder {
   /**
    * Finds an open port. Both TCP and UDP port must be open.
    * <p>
-   * Tests ports starting with 'start' port until port 65535.
+   * Tests ports starting with 'start' port plus a random offset until port 65535.
    *
    * @param start First port to test.
    * @return Returns an open port.
@@ -27,7 +30,7 @@ public class AvailablePortFinder {
       throw new IllegalArgumentException("Illegal start port: " + start);
     }
 
-    int port = start;
+    int port = start + RANDOM.nextInt(OFFSET_RANGE);
     while (port <= MAX_PORT) {
       if (isPortAvailable(port)) return port;
       port++;
