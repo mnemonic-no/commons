@@ -52,6 +52,10 @@ public class GuiceBeanProvider implements BeanProvider{
     return result;
   }
 
+  public Injector getInjector() {
+    return injector;
+  }
+
   @Override
   public Map<String, Object> getBeans() {
     return getBeans(Object.class);
