@@ -16,6 +16,10 @@ public class Logging {
     return getProvider().getLogger(name);
   }
 
+  public static LoggingContext getLoggingContext() {
+    return getProvider().getLoggingContext();
+  }
+
   public static Logger getLogger(Class clz) {
     return getLogger(clz == null ? null : clz.getName());
   }
@@ -55,7 +59,42 @@ public class Logging {
 
   private static LoggingProvider createDefaultProvider() {
     System.err.println("ERROR: no.mnemonic.commons.logging.Logging: No logging provider found, using console logger as default. Add implementation package to classpath.");
-    return n -> new ConsoleLoggerImpl();
+    return new LoggingProvider() {
+      @Override
+      public Logger getLogger(String name) {
+        return new ConsoleLoggerImpl();
+      }
+
+      @Override
+      public LoggingContext getLoggingContext() {
+        return new LoggingContext() {
+          @Override
+          public void clear() {
+            // do nothing
+          }
+
+          @Override
+          public boolean containsKey(String key) {
+            return false;
+          }
+
+          @Override
+          public String get(String key) {
+            return null;
+          }
+
+          @Override
+          public void put(String key, String value) {
+            // do nothing
+          }
+
+          @Override
+          public void remove(String key) {
+            // do nothing
+          }
+        };
+      }
+    };
   }
 
 }

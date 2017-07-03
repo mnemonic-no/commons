@@ -2,15 +2,23 @@ package no.mnemonic.commons.logging.log4j;
 
 
 import no.mnemonic.commons.logging.Logger;
+import no.mnemonic.commons.logging.LoggingContext;
 import no.mnemonic.commons.logging.LoggingProvider;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 
 public class Log4JLoggingProvider implements LoggingProvider {
 
+  private final Log4jLoggingContext loggingContext = new Log4jLoggingContext();
+
   @Override
   public Logger getLogger(String name) {
     return new Log4JLogger(name);
+  }
+
+  @Override
+  public LoggingContext getLoggingContext() {
+    return loggingContext;
   }
 
   public static class Log4JLogger implements Logger {
