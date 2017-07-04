@@ -110,4 +110,12 @@ public class FlagUtilsTest {
     long flag = setFlagByBitPositions(0L, positions);
     assertEquals(1L, flag);
   }
+
+  @Test
+  public void testSetFlagBitPositionsWithExistingBit() throws Exception {
+    Set<Short> positions = SetUtils.set((short) 1, (short) 3);
+    long existFlag = FlagUtils.setFlagByBitPositions(0L, positions);
+    long afterFlag = FlagUtils.setFlagByBitPositions(existFlag, positions);
+    assertEquals(existFlag, afterFlag);
+  }
 }

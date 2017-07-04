@@ -197,8 +197,9 @@ public class FlagUtils {
     if (positions == null || positions.isEmpty()) {
       return flag;
     }
+    Set<Short> existPositions = getFlagBitPositions(initFlag);
     for (Short pos : positions) {
-      if (pos == null) {
+      if (pos == null || existPositions.contains(pos)) {
         continue;
       }
       if (pos < 0 || pos > 63) {
