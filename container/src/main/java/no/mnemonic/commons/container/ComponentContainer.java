@@ -181,14 +181,14 @@ public class ComponentContainer implements Component, ComponentListener, Compone
    * Parent containers are untouched
    */
   public ComponentContainer destroy() {
-    try {
-      // only allow one thread to attempt shutdown for any container
-      synchronized (STATE_LOCK) {
-        if (getComponentState().isTerminal()) return this;
-        setState(STOPPING);
-        STATE_LOCK.notifyAll();
-      }
+    // only allow one thread to attempt shutdown for any container
+    synchronized (STATE_LOCK) {
+      if (getComponentState().isTerminal()) return this;
+      setState(STOPPING);
+      STATE_LOCK.notifyAll();
+    }
 
+    try {
       getLogger().warning("Shutting down...");
       fireContainerStopping();
 

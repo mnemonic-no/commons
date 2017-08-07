@@ -1,11 +1,34 @@
 package no.mnemonic.commons.utilities.lambda;
 
 import java.util.Collection;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class LambdaUtils {
   private LambdaUtils() {
+  }
+
+
+  /**
+   * Simple helper to wait for a predicate to return true. Will test predicate every 100ms until true or timeout.
+   *
+   * @param booleanSupplier the predicate
+   * @param waitTime how long to wait before giving up
+   * @param timeUnit time unit of waitTime
+   * @return true if predicate returns true within timeout, false if timed out without getting true value
+   * @throws InterruptedException if interrupted during sleep.
+   */
+  public static boolean waitFor(BooleanSupplier booleanSupplier, long waitTime, TimeUnit timeUnit)  throws InterruptedException {
+    long timeout = System.currentTimeMillis() + timeUnit.toMillis(waitTime);
+    while (System.currentTimeMillis() < timeout) {
+      if (booleanSupplier.getAsBoolean()) return true;
+      Thread.sleep(100);
+    }
+    return false;
   }
 
   /**

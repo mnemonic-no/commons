@@ -5,14 +5,17 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static no.mnemonic.commons.utilities.lambda.LambdaUtils.forEachTry;
-import static no.mnemonic.commons.utilities.lambda.LambdaUtils.tryStream;
-import static no.mnemonic.commons.utilities.lambda.LambdaUtils.tryTo;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
+import static no.mnemonic.commons.utilities.lambda.LambdaUtils.*;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -26,6 +29,39 @@ public class LambdaUtilsTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+  }
+
+  @Test
+  public void testWaitForWaitsUntilTimeout() throws Exception {
+    AtomicBoolean bool = new AtomicBoolean(false);
+    long t1 = System.currentTimeMillis();
+    assertFalse(waitFor(bool::get, 1, TimeUnit.SECONDS));
+    long t2 = System.currentTimeMillis();
+    assertTrue(t2 >= t1 + 1000);
+    assertTrue(t2 <= t1 + 2000);
+  }
+
+  @Test
+  public void testWaitForNoWaitIfInitialTrue() throws Exception {
+    AtomicBoolean bool = new AtomicBoolean(true);
+    long t1 = System.currentTimeMillis();
+    assertTrue(waitFor(bool::get, 1, TimeUnit.SECONDS));
+    long t2 = System.currentTimeMillis();
+    assertTrue(t2 <= t1 + 500);
+  }
+
+  @Test
+  public void testWaitForReturnsWhenTrue() throws Exception {
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    AtomicBoolean bool = new AtomicBoolean(false);
+    long t1 = System.currentTimeMillis();
+    Future<Boolean> value = executor.submit(()->waitFor(bool::get, 1, TimeUnit.SECONDS));
+    assertFalse(value.isDone());
+    Thread.sleep(100);
+    bool.set(true);
+    assertTrue(value.get(500, TimeUnit.MILLISECONDS));
+    long t2 = System.currentTimeMillis();
+    assertTrue(t2 <= t1 + 1000);
   }
 
   @Test
