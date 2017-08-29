@@ -12,6 +12,10 @@
     <version>0.1.7-SNAPSHOT</version>
   </parent>
 
+  <properties>
+    <logback.version>1.2.3</logback.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>no.mnemonic.commons</groupId>
@@ -32,6 +36,17 @@
       <groupId>info.archinnov</groupId>
       <artifactId>achilles-embedded</artifactId>
       <version>${achilles.version}</version>
+    </dependency>
+    <!--
+      Logback is needed because in newer Cassandra versions ThreadAwareSecurityManager directly depends on it, but
+      Achilles excludes logback when depending on Cassandra. Add it back, otherwise Cassandra won't start.
+      Reconsider this when upgrading to newer Achilles versions. See also https://issues.apache.org/jira/browse/CASSANDRA-13396.
+    -->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 
