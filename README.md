@@ -5,7 +5,13 @@ mnemonic commons
 
 ## Usage
 
-TODO: Link to javadoc.
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/component.svg?color=orange&label=component)](https://javadoc.io/doc/no.mnemonic.commons/component)
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/container.svg?color=orange&label=container)](https://javadoc.io/doc/no.mnemonic.commons/container)
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/logging.svg?color=orange&label=logging)](https://javadoc.io/doc/no.mnemonic.commons/logging)
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/logging-log4j.svg?color=orange&label=logging-log4j)](https://javadoc.io/doc/no.mnemonic.commons/logging-log4j)
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/metrics.svg?color=orange&label=metrics)](https://javadoc.io/doc/no.mnemonic.commons/metrics)
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/testtools.svg?color=orange&label=testtools)](https://javadoc.io/doc/no.mnemonic.commons/testtools)
+[![Javadocs](https://javadoc.io/badge/no.mnemonic.commons/utilities.svg?color=orange&label=utilities)](https://javadoc.io/doc/no.mnemonic.commons/utilities)
 
 ## Installation
 
