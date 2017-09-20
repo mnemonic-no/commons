@@ -2,35 +2,50 @@ package no.mnemonic.commons.utilities;
 
 import org.junit.Test;
 
+import static no.mnemonic.commons.utilities.StringUtils.*;
 import static org.junit.Assert.*;
 
 public class StringUtilsTest {
 
   @Test
   public void testIsEmpty() {
-    assertTrue(StringUtils.isEmpty(null));
-    assertTrue(StringUtils.isEmpty(""));
-    assertFalse(StringUtils.isEmpty(" "));
-    assertFalse(StringUtils.isEmpty("test"));
-    assertFalse(StringUtils.isEmpty(" test "));
+    assertTrue(isEmpty(null));
+    assertTrue(isEmpty(""));
+    assertFalse(isEmpty(" "));
+    assertFalse(isEmpty("test"));
+    assertFalse(isEmpty(" test "));
   }
 
   @Test
   public void testIsBlank() {
-    assertTrue(StringUtils.isBlank(null));
-    assertTrue(StringUtils.isBlank(""));
-    assertTrue(StringUtils.isBlank(" "));
-    assertFalse(StringUtils.isBlank("test"));
-    assertFalse(StringUtils.isBlank(" test "));
+    assertTrue(isBlank(null));
+    assertTrue(isBlank(""));
+    assertTrue(isBlank(" "));
+    assertFalse(isBlank("test"));
+    assertFalse(isBlank(" test "));
   }
 
   @Test
   public void testLength() {
-    assertEquals(0, StringUtils.length(null));
-    assertEquals(0, StringUtils.length(""));
-    assertEquals(1, StringUtils.length(" "));
-    assertEquals(4, StringUtils.length("test"));
-    assertEquals(6, StringUtils.length(" test "));
+    assertEquals(0, length(null));
+    assertEquals(0, length(""));
+    assertEquals(1, length(" "));
+    assertEquals(4, length("test"));
+    assertEquals(6, length(" test "));
   }
 
+  @Test
+  public void testIsInteger() {
+    assertFalse(isInteger(null));
+    assertFalse(isInteger(""));
+    assertFalse(isInteger("a"));
+    assertFalse(isInteger("1 "));
+    assertFalse(isInteger(" 1"));
+    assertFalse(isInteger("1 2"));
+
+    assertTrue(isInteger("1"));
+    assertTrue(isInteger("-1"));
+    assertTrue(isInteger("0"));
+    assertTrue(isInteger("999999999999999999999999999999999999999999999999999999999999999999999"));
+  }
 }

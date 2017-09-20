@@ -35,4 +35,22 @@ public class StringUtils {
     return str == null ? 0 : str.length();
   }
 
+  /**
+   * Simple method to test if an input string can be parsed to an integer.
+   * The input can be negative (with a minus sign immediately prefixing the numbers).
+   * No number separators or spaces will be accepted.
+   *
+   * The method will return true even if the integer string is too large to be represented by a
+   * Java Integer or Long.
+   *
+   * If the method returns true, the input string should be parseable with Integer.parseInt or Long.parseLong
+   * with the exception of integer overflow.
+   *
+   * @param str string to test
+   * @return true if string can be parsed to a integer number
+   */
+  public static boolean isInteger(String str) {
+    return str != null && str.matches("(\\-)?\\d+");
+  }
+
 }
