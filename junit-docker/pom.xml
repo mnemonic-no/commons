@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>utilities</artifactId>
+  <artifactId>junit-docker</artifactId>
   <packaging>jar</packaging>
 
-  <name>mnemonic commons - utilities</name>
-  <description>Simple stand-alone utility functions</description>
+  <name>mnemonic commons - junit docker</name>
+  <description>JUnit resources to use Docker containers during integration tests</description>
 
   <parent>
     <groupId>no.mnemonic.commons</groupId>
@@ -14,10 +14,20 @@
 
   <dependencies>
     <dependency>
+      <groupId>no.mnemonic.commons</groupId>
+      <artifactId>utilities</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.spotify</groupId>
+      <artifactId>docker-client</artifactId>
+      <version>${docker.client.version}</version>
+      <classifier>shaded</classifier>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
