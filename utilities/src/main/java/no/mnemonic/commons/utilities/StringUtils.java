@@ -1,5 +1,7 @@
 package no.mnemonic.commons.utilities;
 
+import java.util.UUID;
+
 public class StringUtils {
 
   private StringUtils() {
@@ -51,6 +53,29 @@ public class StringUtils {
    */
   public static boolean isInteger(String str) {
     return str != null && str.matches("(\\-)?\\d+");
+  }
+
+  /**
+   * Simple method to test if an input string can be parsed to an UUID by UUID.fromString().
+   *
+   * The method will only check the expected format of hexadecimal characters and hyphens,
+   * it does not check if the UUID is valid according to UUID version rules.
+   *
+   * If the method returns true, the input string should be parseable with UUID.fromString()
+   *
+   * @param str string to test
+   * @return true if string can be parsed to a UUID
+   * @see java.util.UUID#fromString(String)
+   */
+  public static boolean isUUID(String str) {
+    try {
+      if (str == null) return false;
+      //noinspection ResultOfMethodCallIgnored
+      UUID.fromString(str);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
   }
 
 }

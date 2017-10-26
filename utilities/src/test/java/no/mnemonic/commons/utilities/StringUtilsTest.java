@@ -48,4 +48,20 @@ public class StringUtilsTest {
     assertTrue(isInteger("0"));
     assertTrue(isInteger("999999999999999999999999999999999999999999999999999999999999999999999"));
   }
+
+  @Test
+  public void testIsUUID() {
+    assertFalse(isUUID(null));
+    assertFalse(isUUID(""));
+    assertFalse(isUUID("a"));
+    assertFalse(isUUID("1"));
+    assertFalse(isUUID("g0000000-0000-0000-0000-000000000000"));
+    assertFalse(isUUID("]0000000-0000-0000-0000-000000000000"));
+    assertFalse(isUUID("00000000-0000-0000-0000-000000000000 "));
+    assertFalse(isUUID(" 00000000-0000-0000-0000-000000000000"));
+
+    assertTrue(isUUID("00000000-0000-0000-0000-000000000000"));
+    assertTrue(isUUID("abcdef12-0000-0000-0000-000000000000"));
+    assertTrue(isUUID("ABCDEF12-0000-0000-0000-000000000000"));
+  }
 }
