@@ -1,7 +1,6 @@
 package no.mnemonic.commons.container;
 
 import com.google.inject.Module;
-import no.mnemonic.commons.component.Component;
 import no.mnemonic.commons.component.ComponentListener;
 import no.mnemonic.commons.component.Versioned;
 import no.mnemonic.commons.container.providers.BeanProvider;
@@ -47,11 +46,11 @@ public class BootStrap implements Versioned, ComponentListener {
   }
 
   @Override
-  public void notifyComponentStopped(Component component) {
+  public void notifyComponentStopped(Object component) {
   }
 
   @Override
-  public void notifyComponentStopping(Component component) {
+  public void notifyComponentStopping(Object component) {
   }
 
   protected void containerStarted(ComponentContainer container) {

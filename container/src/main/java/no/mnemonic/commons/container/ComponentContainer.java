@@ -112,7 +112,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   }
 
   @Override
-  public void notifyComponentStopping(Component component) {
+  public void notifyComponentStopping(Object component) {
     if (getComponentState().isTerminal()) {
       if (getLogger().isDebug())
         getLogger().debug("Component " + component + " notified us of current shutdown");
@@ -120,7 +120,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   }
 
   @Override
-  public void notifyComponentStopped(Component component) {
+  public void notifyComponentStopped(Object component) {
     //if notifying component is part of this container, destroy this container now (unless already terminating)
     if (initializedComponents.contains(component) && !getComponentState().isTerminal()) {
       getLogger().warning("Component " + component + " stopped, destroying container " + this);

@@ -26,7 +26,7 @@ public interface ComponentListener {
    * @param component reference to the calling component itself, to give the
    *                  listener an idea which component is terminating.
    */
-  void notifyComponentStopped(Component component);
+  void notifyComponentStopped(Object component);
 
   /**
    * Signal whoever cares that this component is actively attempting to cleanly shut down
@@ -34,5 +34,5 @@ public interface ComponentListener {
    * @param component reference to the calling component itself, to give the listener
    *                  an idea that the component is in the process of shutting down
    */
-  void notifyComponentStopping(Component component);
+  void notifyComponentStopping(Object component);
 }
