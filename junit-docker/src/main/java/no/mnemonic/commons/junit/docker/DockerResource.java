@@ -239,6 +239,19 @@ public class DockerResource extends ExternalResource {
     }
   }
 
+  /**
+   * Teardown DockerResource after executing tests. It should not be necessary to override this method.
+   */
+  @Override
+  protected void after() {
+    synchronized (DockerResource.class) {
+      if (docker != null) {
+        shutdownContainer();
+        docker = null;
+      }
+    }
+  }
+
   private DockerClient resolveDockerClient() {
     try {
       if (!StringUtils.isBlank(System.getenv(DOCKER_HOST_ENVIRONMENT_VARIABLE))) {

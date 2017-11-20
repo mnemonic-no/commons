@@ -19,6 +19,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -106,6 +107,37 @@ public class DockerResourceTest {
     }));
     verify(dockerClient).startContainer(eq("containerID"));
     verifyNoMoreInteractions(dockerClient);
+  }
+
+  @Test
+  public void testTeardownSuccessful() throws Throwable {
+    mockStartContainer();
+    resource.before();
+    resource.after();
+
+    verify(dockerClient).stopContainer(eq("containerID"), anyInt());
+    verify(dockerClient).removeContainer(eq("containerID"));
+    verify(dockerClient).close();
+  }
+
+  @Test
+  public void testTeardownExceptionOnStopContainer() throws Throwable {
+    doThrow(DockerException.class).when(dockerClient).stopContainer(any(), anyInt());
+    mockStartContainer();
+    resource.before();
+    resource.after();
+
+    verify(dockerClient).close();
+  }
+
+  @Test
+  public void testTeardownExceptionOnRemoveContainer() throws Throwable {
+    doThrow(DockerException.class).when(dockerClient).removeContainer(any());
+    mockStartContainer();
+    resource.before();
+    resource.after();
+
+    verify(dockerClient).close();
   }
 
   @Test(expected = IllegalStateException.class)
