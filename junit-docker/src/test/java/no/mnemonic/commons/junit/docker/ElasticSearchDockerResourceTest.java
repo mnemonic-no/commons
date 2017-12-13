@@ -17,7 +17,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -78,21 +77,6 @@ public class ElasticSearchDockerResourceTest {
 
     verify(dockerClient).execCreate(any(), eq(REACHABILITY_COMMAND), (DockerClient.ExecCreateParam[]) any());
     verify(dockerClient).execStart(any());
-  }
-
-  @Test
-  public void testInitializeAddsAdditionalConfig() throws Throwable {
-    mockExecute(REACHABILITY_COMMAND, REACHABILITY_SUCCESSFUL_OUTPUT);
-    resource.before();
-
-    verify(dockerClient).createContainer(argThat(containerConfig -> {
-      assertTrue(containerConfig.env().contains("xpack.security.enabled=false"));
-      assertTrue(containerConfig.env().contains("xpack.monitoring.enabled=false"));
-      assertTrue(containerConfig.env().contains("xpack.ml.enabled=false"));
-      assertTrue(containerConfig.env().contains("xpack.graph.enabled=false"));
-      assertTrue(containerConfig.env().contains("xpack.watcher.enabled=false"));
-      return true;
-    }));
   }
 
   @Test

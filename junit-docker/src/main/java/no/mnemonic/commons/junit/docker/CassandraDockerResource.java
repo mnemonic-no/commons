@@ -9,6 +9,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -42,8 +43,9 @@ public class CassandraDockerResource extends DockerResource {
   private final Path truncateScript;
 
   private CassandraDockerResource(String imageName, Set<Integer> applicationPort, int reachabilityTimeout,
-                                  Supplier<DockerClient> dockerClientResolver, String setupScript, String truncateScript) {
-    super(imageName, applicationPort, reachabilityTimeout, dockerClientResolver);
+                                  Supplier<DockerClient> dockerClientResolver, String setupScript,
+                                  String truncateScript, Map<String, String> environmentVariables) {
+    super(imageName, applicationPort, reachabilityTimeout, dockerClientResolver, environmentVariables);
 
     // Both parameters are optional.
     this.setupScript = !StringUtils.isBlank(setupScript) ? checkFileExists(setupScript) : null;
@@ -175,7 +177,8 @@ public class CassandraDockerResource extends DockerResource {
      */
     @Override
     public CassandraDockerResource build() {
-      return new CassandraDockerResource(imageName, applicationPorts, reachabilityTimeout, dockerClientResolver, setupScript, truncateScript);
+      return new CassandraDockerResource(imageName, applicationPorts, reachabilityTimeout, dockerClientResolver,
+              setupScript, truncateScript, environmentVariables);
     }
 
     /**

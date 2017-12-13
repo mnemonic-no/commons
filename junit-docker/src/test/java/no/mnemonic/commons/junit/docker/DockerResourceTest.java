@@ -37,6 +37,8 @@ public class DockerResourceTest {
     resource = DockerResource.builder()
             .setDockerClientResolver(() -> dockerClient)
             .setImageName("busybox")
+            .addEnvironmentVariable("key1","value1")
+            .addEnvironmentVariable("key2","value2")
             .addApplicationPort(8080)
             .build();
   }
@@ -101,6 +103,9 @@ public class DockerResourceTest {
     verify(dockerClient).ping();
     verify(dockerClient).createContainer(argThat(containerConfig -> {
       assertEquals("busybox", containerConfig.image());
+      assertEquals(2, containerConfig.env().size());
+      assertEquals("key1=value1", containerConfig.env().get(0));
+      assertEquals("key2=value2", containerConfig.env().get(1));
       assertTrue(containerConfig.exposedPorts().contains("8080"));
       assertTrue(containerConfig.hostConfig().portBindings().containsKey("8080"));
       return true;

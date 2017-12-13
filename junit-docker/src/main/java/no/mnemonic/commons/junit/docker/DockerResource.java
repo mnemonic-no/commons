@@ -9,13 +9,12 @@ import com.spotify.docker.client.messages.PortBinding;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
+import no.mnemonic.commons.utilities.collections.MapUtils;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 import no.mnemonic.commons.utilities.lambda.LambdaUtils;
 import org.junit.rules.ExternalResource;
 
-import java.util.Collections;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -71,6 +70,7 @@ public class DockerResource extends ExternalResource {
   private final Set<String> applicationPorts;
   private final int reachabilityTimeout;
   private final Supplier<DockerClient> dockerClientResolver;
+  private final Map<String, String> environmentVariables;
 
   private DockerClient docker;
   private String containerID;
@@ -78,14 +78,15 @@ public class DockerResource extends ExternalResource {
   /**
    * Constructor to override by subclasses.
    *
-   * @param imageName            Name of Docker image (required)
-   * @param applicationPorts     Application ports available inside the container (at least one is required)
-   * @param reachabilityTimeout  Timeout until testing that container is reachable stops (required)
-   * @param dockerClientResolver Function to resolve DockerClient (optional)
+   * @param imageName              Name of Docker image (required)
+   * @param applicationPorts       Application ports available inside the container (at least one is required)
+   * @param reachabilityTimeout    Timeout until testing that container is reachable stops (required)
+   * @param dockerClientResolver   Function to resolve DockerClient (optional)
+   * @param environmentVariables   Container's environment variables (optional)
    * @throws IllegalArgumentException If one of the required parameters is not provided
    */
   protected DockerResource(String imageName, Set<Integer> applicationPorts, int reachabilityTimeout,
-                           Supplier<DockerClient> dockerClientResolver) {
+                           Supplier<DockerClient> dockerClientResolver, Map<String, String> environmentVariables) {
     if (StringUtils.isBlank(imageName)) throw new IllegalArgumentException("'imageName' not provided!");
     if (CollectionUtils.isEmpty(applicationPorts))
       throw new IllegalArgumentException("'applicationPorts' not provided!");
@@ -98,6 +99,7 @@ public class DockerResource extends ExternalResource {
             .collect(Collectors.toSet()));
     this.reachabilityTimeout = reachabilityTimeout;
     this.dockerClientResolver = ObjectUtils.ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
+    this.environmentVariables = Collections.unmodifiableMap(environmentVariables);
 
     // Make sure to always shutdown any containers in order to not leave stale containers on the host machine,
     // e.g. in case of exceptions or when the user stops the tests. This won't work if the JVM process is killed.
@@ -285,12 +287,18 @@ public class DockerResource extends ExternalResource {
     HostConfig hostConfig = additionalHostConfig(HostConfig.builder()
             .portBindings(map(applicationPorts, port -> T(port, list(PortBinding.randomPort("0.0.0.0")))))
             .build());
+    // Convert provided environmental variables to appropriate docker format
+    List<String> env = environmentVariables.entrySet()
+            .stream()
+            .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
+            .collect(Collectors.toList());
     // Configure container with the image to start and host port -> application port bindings.
     // Also apply any additional container configuration by calling additionalContainerConfig().
     ContainerConfig containerConfig = additionalContainerConfig(ContainerConfig.builder()
             .image(imageName)
             .exposedPorts(applicationPorts)
             .hostConfig(hostConfig)
+            .env(env)
             .build());
 
     try {
@@ -324,7 +332,7 @@ public class DockerResource extends ExternalResource {
    * <p>
    * Subclasses of DockerResource can also define own builders extending this builder in order to be able to configure
    * the same properties. The configurable properties are exposed as protected fields which can be passed to the
-   * constructor of a subclass. This constructor in turn should pass them to {@link DockerResource#DockerResource(String, Set, int, Supplier)}.
+   * constructor of a subclass. This constructor in turn should pass them to {@link DockerResource#DockerResource(String, Set, int, Supplier, Map)}.
    * See {@link CassandraDockerResource.Builder} as an example.
    */
   public static class Builder<T extends Builder> {
@@ -332,6 +340,7 @@ public class DockerResource extends ExternalResource {
     protected Set<Integer> applicationPorts;
     protected int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT_SECONDS;
     protected Supplier<DockerClient> dockerClientResolver;
+    protected Map<String, String> environmentVariables = new HashMap<>();
 
     /**
      * Build a configured DockerResource.
@@ -339,7 +348,7 @@ public class DockerResource extends ExternalResource {
      * @return Configured DockerResource
      */
     public DockerResource build() {
-      return new DockerResource(imageName, applicationPorts, reachabilityTimeout, dockerClientResolver);
+      return new DockerResource(imageName, applicationPorts, reachabilityTimeout, dockerClientResolver, environmentVariables);
     }
 
     /**
@@ -398,6 +407,29 @@ public class DockerResource extends ExternalResource {
      */
     public T setDockerClientResolver(Supplier<DockerClient> dockerClientResolver) {
       this.dockerClientResolver = dockerClientResolver;
+      return (T) this;
+    }
+
+    /**
+     * Set environment variables for container
+     *
+     * @param variables Array of key-value pairs
+     * @return Builder
+     */
+    public T setEnvironmentVariables(MapUtils.Pair<String, String>... variables) {
+      this.environmentVariables = MapUtils.map(variables);
+      return (T) this;
+    }
+
+    /**
+     * Add environment variable for container
+     *
+     * @param key    Variable name
+     * @param value  Variable value
+     * @return Builder
+     */
+    public T addEnvironmentVariable(String key, String value) {
+      this.environmentVariables.put(key, value);
       return (T) this;
     }
   }

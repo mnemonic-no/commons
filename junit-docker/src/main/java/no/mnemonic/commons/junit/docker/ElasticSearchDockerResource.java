@@ -1,13 +1,13 @@
 package no.mnemonic.commons.junit.docker;
 
 import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.ContainerConfig;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -39,8 +39,9 @@ public class ElasticSearchDockerResource extends DockerResource {
   private final Set<String> deleteIndices;
 
   private ElasticSearchDockerResource(String imageName, Set<Integer> applicationPort, int reachabilityTimeout,
-                                      Supplier<DockerClient> dockerClientResolver, Set<String> deleteIndices) {
-    super(imageName, applicationPort, reachabilityTimeout, dockerClientResolver);
+                                      Supplier<DockerClient> dockerClientResolver, Set<String> deleteIndices,
+                                      Map<String, String> environmentVariables) {
+    super(imageName, applicationPort, reachabilityTimeout, dockerClientResolver, environmentVariables);
 
     // The 'deleteIndices' parameter is optional.
     this.deleteIndices = ObjectUtils.ifNotNull(deleteIndices, Collections::unmodifiableSet, Collections.emptySet());
@@ -83,22 +84,6 @@ public class ElasticSearchDockerResource extends DockerResource {
    */
   public static Builder builder() {
     return new Builder();
-  }
-
-  /**
-   * Adds ElasticSearch specific container configuration to default configuration from {@link DockerResource}.
-   *
-   * @param config Default configuration as set up by DockerResource
-   * @return Modified container configuration
-   */
-  @Override
-  protected ContainerConfig additionalContainerConfig(ContainerConfig config) {
-    return config.toBuilder()
-            // If executed with the official ElasticSearch image disable X-Pack extensions because they need a license
-            // and they aren't strictly necessary inside a testing environment.
-            .env("xpack.security.enabled=false", "xpack.monitoring.enabled=false", "xpack.ml.enabled=false",
-                    "xpack.graph.enabled=false", "xpack.watcher.enabled=false")
-            .build();
   }
 
   /**
@@ -146,7 +131,8 @@ public class ElasticSearchDockerResource extends DockerResource {
      */
     @Override
     public ElasticSearchDockerResource build() {
-      return new ElasticSearchDockerResource(imageName, applicationPorts, reachabilityTimeout, dockerClientResolver, deleteIndices);
+      return new ElasticSearchDockerResource(imageName, applicationPorts, reachabilityTimeout,
+              dockerClientResolver, deleteIndices, environmentVariables);
     }
 
     /**
