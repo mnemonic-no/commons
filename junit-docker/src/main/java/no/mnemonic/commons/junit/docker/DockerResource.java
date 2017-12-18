@@ -20,6 +20,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.spotify.docker.client.DockerClient.ExecCreateParam.*;
+import static no.mnemonic.commons.utilities.ObjectUtils.ifNull;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
 import static no.mnemonic.commons.utilities.collections.MapUtils.Pair.T;
 import static no.mnemonic.commons.utilities.collections.MapUtils.map;
@@ -58,6 +60,10 @@ import static no.mnemonic.commons.utilities.collections.MapUtils.map;
  * This class provides a basic Docker resource but it is most useful to extend it and override {@link #isContainerReachable()}
  * and {@link #prepareContainer()} for more specific use cases, for instance when testing a specific database.
  * See {@link CassandraDockerResource} as an example.
+ * <p>
+ * <h3>Proxy settings</h3>
+ * The DockerResource will by default use system properties to determine proxy settings when communicating with the
+ * docker daemon. To completely disable proxy, you can set the system property "-DDockerResource.disable.proxy=true".
  */
 public class DockerResource extends ExternalResource {
 
@@ -86,7 +92,8 @@ public class DockerResource extends ExternalResource {
    * @throws IllegalArgumentException If one of the required parameters is not provided
    */
   protected DockerResource(String imageName, Set<Integer> applicationPorts, int reachabilityTimeout,
-                           Supplier<DockerClient> dockerClientResolver, Map<String, String> environmentVariables) {
+                           Supplier<DockerClient> dockerClientResolver,
+                           Map<String, String> environmentVariables) {
     if (StringUtils.isBlank(imageName)) throw new IllegalArgumentException("'imageName' not provided!");
     if (CollectionUtils.isEmpty(applicationPorts))
       throw new IllegalArgumentException("'applicationPorts' not provided!");
@@ -98,7 +105,7 @@ public class DockerResource extends ExternalResource {
             .map(String::valueOf)
             .collect(Collectors.toSet()));
     this.reachabilityTimeout = reachabilityTimeout;
-    this.dockerClientResolver = ObjectUtils.ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
+    this.dockerClientResolver = ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
     this.environmentVariables = Collections.unmodifiableMap(environmentVariables);
 
     // Make sure to always shutdown any containers in order to not leave stale containers on the host machine,
@@ -209,7 +216,7 @@ public class DockerResource extends ExternalResource {
    *
    * @return DockerClient used by DockerResource
    */
-  protected DockerClient getDockerClient() {
+  public DockerClient getDockerClient() {
     return docker;
   }
 
@@ -219,7 +226,7 @@ public class DockerResource extends ExternalResource {
    *
    * @return containerID of started container
    */
-  protected String getContainerID() {
+  public String getContainerID() {
     return containerID;
   }
 
@@ -258,14 +265,25 @@ public class DockerResource extends ExternalResource {
     try {
       if (!StringUtils.isBlank(System.getenv(DOCKER_HOST_ENVIRONMENT_VARIABLE))) {
         // If DOCKER_HOST is set create docker client from environment variables.
-        return DefaultDockerClient.fromEnv().build();
+        return DefaultDockerClient
+                .fromEnv()
+                .useProxy(useProxySettings())
+                .build();
       } else {
         // Otherwise connect to localhost on the default daemon port.
-        return new DefaultDockerClient(String.format("http://localhost:%d", DEFAULT_DOCKER_DAEMON_PORT));
+        return DefaultDockerClient.builder()
+                .uri(String.format("http://localhost:%d", DEFAULT_DOCKER_DAEMON_PORT))
+                .useProxy(useProxySettings())
+                .build();
       }
     } catch (Exception ex) {
       throw new IllegalStateException("Could not create docker client.", ex);
     }
+  }
+
+  private boolean useProxySettings() {
+    //allow user to turn of proxy autodetection by setting this property using a system property
+    return !Boolean.valueOf(ifNull(System.getProperty("DockerResource.disable.proxy"), "false"));
   }
 
   private void initializeDockerClient() {
@@ -332,7 +350,7 @@ public class DockerResource extends ExternalResource {
    * <p>
    * Subclasses of DockerResource can also define own builders extending this builder in order to be able to configure
    * the same properties. The configurable properties are exposed as protected fields which can be passed to the
-   * constructor of a subclass. This constructor in turn should pass them to {@link DockerResource#DockerResource(String, Set, int, Supplier, Map)}.
+   * constructor of a subclass. This constructor in turn should pass them to the constructor}.
    * See {@link CassandraDockerResource.Builder} as an example.
    */
   public static class Builder<T extends Builder> {
