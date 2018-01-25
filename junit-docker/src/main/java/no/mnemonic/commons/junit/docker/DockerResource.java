@@ -20,7 +20,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.spotify.docker.client.DockerClient.ExecCreateParam.*;
 import static no.mnemonic.commons.utilities.ObjectUtils.ifNull;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
 import static no.mnemonic.commons.utilities.collections.MapUtils.Pair.T;
@@ -236,7 +235,7 @@ public class DockerResource extends ExternalResource {
    * @throws Throwable If initialization fails
    */
   @Override
-  protected void before() throws Throwable {
+  public void before() throws Throwable {
     synchronized (DockerResource.class) {
       // Only initialize everything once. It will be automatically teared down when the JVM shuts down.
       if (docker == null) {
@@ -252,7 +251,7 @@ public class DockerResource extends ExternalResource {
    * Teardown DockerResource after executing tests. It should not be necessary to override this method.
    */
   @Override
-  protected void after() {
+  public void after() {
     synchronized (DockerResource.class) {
       if (docker != null) {
         shutdownContainer();
