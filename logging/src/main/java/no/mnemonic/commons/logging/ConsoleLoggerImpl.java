@@ -5,7 +5,7 @@ import java.io.PrintStream;
 public class ConsoleLoggerImpl implements Logger {
 
   private enum Level {
-    FATAL, ERROR, WARN, INFO, DEBUG;
+    FATAL, ERROR, WARN, INFO, DEBUG
   }
 
   public void fatal(String formattedMessage, Object... args) {
@@ -37,7 +37,7 @@ public class ConsoleLoggerImpl implements Logger {
   }
 
   public void warning(Throwable ex, String formattedMessage, Object... args) {
-    log(Level.WARN, formattedMessage, args);
+    log(Level.WARN, ex, formattedMessage, args);
   }
 
   public void info(Throwable ex, String formattedMessage, Object... args) {
