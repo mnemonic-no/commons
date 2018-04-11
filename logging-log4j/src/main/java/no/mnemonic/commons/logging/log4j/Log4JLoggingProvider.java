@@ -1,6 +1,5 @@
 package no.mnemonic.commons.logging.log4j;
 
-
 import no.mnemonic.commons.logging.Logger;
 import no.mnemonic.commons.logging.LoggingContext;
 import no.mnemonic.commons.logging.LoggingProvider;
@@ -22,7 +21,9 @@ public class Log4JLoggingProvider implements LoggingProvider {
   }
 
   public static class Log4JLogger implements Logger {
+
     private final org.apache.logging.log4j.Logger log4jLogger;
+
     public Log4JLogger(String name) {
       this.log4jLogger = LogManager.getLogger(name);
     }
@@ -56,7 +57,7 @@ public class Log4JLoggingProvider implements LoggingProvider {
     }
 
     public void warning(Throwable ex, String formattedMessage, Object... args) {
-      log(Level.WARN, formattedMessage, args);
+      log(Level.WARN, ex, formattedMessage, args);
     }
 
     public void info(Throwable ex, String formattedMessage, Object... args) {
