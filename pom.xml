@@ -39,12 +39,12 @@
 
     <!-- external dependencies -->
     <achilles.version>5.3.1</achilles.version>
-    <docker.client.version>8.11.0</docker.client.version>
-    <guice.version>4.1.0</guice.version>
+    <docker.client.version>8.11.2</docker.client.version>
+    <guice.version>4.2.0</guice.version>
     <junit.version>4.12</junit.version>
-    <log4j.version>2.10.0</log4j.version>
-    <mockito.version>2.13.0</mockito.version>
-    <spring.version>4.3.14.RELEASE</spring.version>
+    <log4j.version>2.11.0</log4j.version>
+    <mockito.version>2.18.3</mockito.version>
+    <spring.version>4.3.16.RELEASE</spring.version>
 
     <!-- build dependencies -->
     <maven.clean.version>3.0.0</maven.clean.version>
