@@ -55,7 +55,7 @@ public class LambdaUtilsTest {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     AtomicBoolean bool = new AtomicBoolean(false);
     long t1 = System.currentTimeMillis();
-    Future<Boolean> value = executor.submit(()->waitFor(bool::get, 1, TimeUnit.SECONDS));
+    Future<Boolean> value = executor.submit(() -> waitFor(bool::get, 1, TimeUnit.SECONDS));
     assertFalse(value.isDone());
     Thread.sleep(100);
     bool.set(true);
@@ -179,6 +179,48 @@ public class LambdaUtilsTest {
   @Test
   public void testTryToWithNullInput() throws Exception {
     assertFalse(tryTo(null));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testTryResultWithNullSupplierThrowsException() {
+    tryResult(null, "default");
+  }
+
+  @Test
+  public void testTryResultWithNullDefaultValue() {
+    assertEquals("value", tryResult(() -> "value", "default"));
+  }
+
+  @Test
+  public void testTryResultWithNullValue() {
+    assertNull(tryResult(() -> null, "default"));
+  }
+
+  @Test
+  public void testTryResultWithExceptionReturnsDefault() {
+    assertEquals("default", tryResult(() -> {
+      throw new RuntimeException();
+    }, "default"));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testTryResultWithNullDefaultSupplierThrowsException() {
+    tryResult(()->"value", null, e->{});
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testTryResultWithNullExceptionHandlerThrowsException() {
+    tryResult(()->"value", ()->"default", null);
+  }
+
+  @Test
+  public void testTryResultWithInvokesExceptionHandler() {
+    //noinspection unchecked
+    Consumer<Throwable> exceptionHandler = mock(Consumer.class);
+    assertEquals("default", tryResult(() -> {
+      throw new RuntimeException();
+    }, ()->"default", exceptionHandler));
+    verify(exceptionHandler).accept(isA(RuntimeException.class));
   }
 
   //helper methods

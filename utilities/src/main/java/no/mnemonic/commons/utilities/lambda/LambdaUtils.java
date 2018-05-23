@@ -1,11 +1,11 @@
 package no.mnemonic.commons.utilities.lambda;
 
 import java.util.Collection;
-import java.util.concurrent.Future;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class LambdaUtils {
@@ -99,6 +99,44 @@ public class LambdaUtils {
   }
 
   /**
+   * Invoke callable to fetch result and return it. If exception is thrown, return default value instead.
+   * Use this method to avoid try/catch blocks where the expected exception should result in a default value.
+   *
+   * @param supplier callable to fetch result from
+   * @param defaultValue value to return if callable fails
+   * @param <T> value type
+   * @return the value from the callable, or defaultValue on exception
+   */
+  public static <T> T tryResult(Callable<T> supplier, T defaultValue)  {
+    return tryResult(supplier, ()->defaultValue, e->{});
+  }
+
+  /**
+   * Invoke callable to fetch result and return it. If exception is thrown, return value from defaultValueSupplier instead.
+   * Notify onException of any exception caught.
+   * Use this method to avoid try/catch blocks where the expected exception should result in a default value.
+   *
+   * @param supplier callable to fetch result from
+   * @param defaultValueSupplier supplier to fetch default value from
+   * @param onException exception consumer to notify on exception
+   * @param <T> value type
+   * @return the value from the callable, or defaultValue on exception
+   *
+   * @see #tryResult(Callable, Object)
+   */
+  public static <T> T tryResult(Callable<T> supplier, Supplier<T> defaultValueSupplier, Consumer<Throwable> onException)  {
+    if (supplier == null) throw new IllegalArgumentException("supplier not set");
+    if (defaultValueSupplier == null) throw new IllegalArgumentException("defaultValueSupplier not set");
+    if (onException == null) throw new IllegalArgumentException("onException not set");
+    try {
+      return supplier.call();
+    } catch (Exception e) {
+      notifyException(onException, e);
+      return defaultValueSupplier.get();
+    }
+  }
+
+  /**
    * Wrap stream into a TryStream.
    * A TryStream allows using map/filter lambdas which throws checked exceptions.
    * Any exception thrown will be caught and rethrown by this method, this is just a convenience method
@@ -127,6 +165,7 @@ public class LambdaUtils {
     try {
       onException.accept(t);
     } catch (Throwable ignored) {
+      //ignore
     }
   }
 
