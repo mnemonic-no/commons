@@ -24,7 +24,11 @@ import java.util.Set;
  * <p>
  * This will truncate all specified Cassandra tables before/after a test is executed.
  * A Cassandra session needs to be provided, e.g. from a CassandraTestResource.
+ *
+ * @deprecated Use CassandraDockerResource from junit-docker module instead. It provides better isolation between the
+ * Cassandra Server and Client as they are not executed in the same JVM. This class will be removed in the future.
  */
+@Deprecated
 public class CassandraTruncateRule extends ExternalResource {
   private final String keyspace;
   private final Set<String> tables;

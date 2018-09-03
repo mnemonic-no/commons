@@ -22,7 +22,11 @@ import org.slf4j.LoggerFactory;
  * <p>
  * This will start a Cassandra server with a cluster name, a keyspace and runs a start-up script.
  * A port the server will listen on is selected automatically.
+ *
+ * @deprecated Use CassandraDockerResource from junit-docker module instead. It provides better isolation between the
+ * Cassandra Server and Client as they are not executed in the same JVM. This class will be removed in the future.
  */
+@Deprecated
 public class CassandraTestResource extends ExternalResource {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraTestResource.class);
 
