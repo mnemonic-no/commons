@@ -1,5 +1,9 @@
 package no.mnemonic.commons.utilities;
 
+import java.util.Collection;
+
+import static no.mnemonic.commons.utilities.collections.CollectionUtils.isEmpty;
+
 /**
  * Utility to make a bean return a nice looking descriptor on toString()
  *
@@ -47,7 +51,7 @@ public class AppendUtils {
    *
    * The format used is the id value followed by a colon (:).
    *
-   * Useful a part of the implementation of {@link AppendMembers#appendMembers}.
+   * Useful as part of the implementation of {@link AppendMembers#appendMembers}.
    *
    * @param buf string buffer
    * @param bean bean to add as ID
@@ -61,7 +65,7 @@ public class AppendUtils {
   /**
    * Appends an anonymous field to a StringBuilder, ie. a field with no name.
    *
-   * Useful a part of the implementation of {@link AppendMembers#appendMembers}.
+   * Useful as part of the implementation of {@link AppendMembers#appendMembers}.
    *
    * @param buf string buffer
    * @param bean bean to add as anonymous field
@@ -77,7 +81,7 @@ public class AppendUtils {
    *
    * The format used is the name followed by an equals sign (=) followed by the value.
    *
-   * Useful a part of the implementation of {@link AppendMembers#appendMembers}.
+   * Useful as part of the implementation of {@link AppendMembers#appendMembers}.
    *
    * @param buf string buffer
    * @param name name of field
@@ -87,6 +91,24 @@ public class AppendUtils {
   public static StringBuilder appendField(StringBuilder buf, String name, Object bean) {
     if (bean == null) return createBuilder(buf);
     return appendBean(appendNamePart(buf, name), bean);
+  }
+
+  /**
+   * Appends a collection field to a StringBuilder.
+   * Only append when collection is not empty.
+   *
+   * Useful as part of the implementation of {@link AppendMembers#appendMembers}.
+   *
+   * @param buf string buffer
+   * @param name  name of field
+   * @param col collection to be appended
+   * @return The StringBuilder
+   */
+  public static StringBuilder appendCollection(StringBuilder buf, String name, Collection<?> col) {
+    if (isEmpty(col)) {
+      return createBuilder(buf);
+    }
+    return appendField(buf, name, col);
   }
 
   /**
