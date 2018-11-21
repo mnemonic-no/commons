@@ -38,10 +38,11 @@ public class ElasticSearchDockerResource extends DockerResource {
 
   private final Set<String> deleteIndices;
 
-  private ElasticSearchDockerResource(String imageName, Set<Integer> applicationPort, int reachabilityTimeout,
-                                      Supplier<DockerClient> dockerClientResolver, Set<String> deleteIndices,
-                                      Map<String, String> environmentVariables) {
-    super(imageName, applicationPort, reachabilityTimeout, dockerClientResolver, environmentVariables);
+  private ElasticSearchDockerResource(String imageName, Set<Integer> applicationPort, String exposedPortsRange,
+                                      int reachabilityTimeout, Supplier<DockerClient> dockerClientResolver,
+                                      Set<String> deleteIndices, Map<String, String> environmentVariables) {
+    super(imageName, applicationPort, exposedPortsRange, reachabilityTimeout, dockerClientResolver,
+            environmentVariables);
 
     // The 'deleteIndices' parameter is optional.
     this.deleteIndices = ObjectUtils.ifNotNull(deleteIndices, Collections::unmodifiableSet, Collections.emptySet());
@@ -131,7 +132,7 @@ public class ElasticSearchDockerResource extends DockerResource {
      */
     @Override
     public ElasticSearchDockerResource build() {
-      return new ElasticSearchDockerResource(imageName, applicationPorts, reachabilityTimeout,
+      return new ElasticSearchDockerResource(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
               dockerClientResolver, deleteIndices, environmentVariables);
     }
 

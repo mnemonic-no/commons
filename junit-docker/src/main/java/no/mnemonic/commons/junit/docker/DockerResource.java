@@ -73,6 +73,7 @@ public class DockerResource extends ExternalResource {
 
   private final String imageName;
   private final Set<String> applicationPorts;
+  private final String exposedPortsRange;
   private final int reachabilityTimeout;
   private final Supplier<DockerClient> dockerClientResolver;
   private final Map<String, String> environmentVariables;
@@ -83,15 +84,16 @@ public class DockerResource extends ExternalResource {
   /**
    * Constructor to override by subclasses.
    *
-   * @param imageName              Name of Docker image (required)
-   * @param applicationPorts       Application ports available inside the container (at least one is required)
-   * @param reachabilityTimeout    Timeout until testing that container is reachable stops (required)
-   * @param dockerClientResolver   Function to resolve DockerClient (optional)
-   * @param environmentVariables   Container's environment variables (optional)
+   * @param imageName            Name of Docker image (required)
+   * @param applicationPorts     Application ports available inside the container (at least one is required)
+   * @param exposedPortsRange    Range of ports for mapping to the outside of the container (optional)
+   * @param reachabilityTimeout  Timeout until testing that container is reachable stops (required)
+   * @param dockerClientResolver Function to resolve DockerClient (optional)
+   * @param environmentVariables Container's environment variables (optional)
    * @throws IllegalArgumentException If one of the required parameters is not provided
    */
-  protected DockerResource(String imageName, Set<Integer> applicationPorts, int reachabilityTimeout,
-                           Supplier<DockerClient> dockerClientResolver,
+  protected DockerResource(String imageName, Set<Integer> applicationPorts, String exposedPortsRange,
+                           int reachabilityTimeout, Supplier<DockerClient> dockerClientResolver,
                            Map<String, String> environmentVariables) {
     if (StringUtils.isBlank(imageName)) throw new IllegalArgumentException("'imageName' not provided!");
     if (CollectionUtils.isEmpty(applicationPorts))
@@ -103,6 +105,7 @@ public class DockerResource extends ExternalResource {
             .filter(Objects::nonNull)
             .map(String::valueOf)
             .collect(Collectors.toSet()));
+    this.exposedPortsRange = exposedPortsRange;
     this.reachabilityTimeout = reachabilityTimeout;
     this.dockerClientResolver = ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
     this.environmentVariables = Collections.unmodifiableMap(environmentVariables);
@@ -299,10 +302,13 @@ public class DockerResource extends ExternalResource {
   }
 
   private void initializeContainer() {
-    // Randomly bind ports on the host to the application ports of the container.
+    PortBinding portBinding = StringUtils.isBlank(exposedPortsRange) ? PortBinding.randomPort("0.0.0.0") :
+            PortBinding.of("0.0.0.0", exposedPortsRange);
+
+    // Bind ports on the host to the application ports of the container randomly or with configured range
     // Also apply any additional host configuration by calling additionalHostConfig().
     HostConfig hostConfig = additionalHostConfig(HostConfig.builder()
-            .portBindings(map(applicationPorts, port -> T(port, list(PortBinding.randomPort("0.0.0.0")))))
+            .portBindings(map(applicationPorts, port -> T(port, list(portBinding))))
             .build());
     // Convert provided environmental variables to appropriate docker format
     List<String> env = environmentVariables.entrySet()
@@ -355,6 +361,7 @@ public class DockerResource extends ExternalResource {
   public static class Builder<T extends Builder> {
     protected String imageName;
     protected Set<Integer> applicationPorts;
+    protected String exposedPortsRange;
     protected int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT_SECONDS;
     protected Supplier<DockerClient> dockerClientResolver;
     protected Map<String, String> environmentVariables = new HashMap<>();
@@ -365,7 +372,8 @@ public class DockerResource extends ExternalResource {
      * @return Configured DockerResource
      */
     public DockerResource build() {
-      return new DockerResource(imageName, applicationPorts, reachabilityTimeout, dockerClientResolver, environmentVariables);
+      return new DockerResource(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
+              dockerClientResolver, environmentVariables);
     }
 
     /**
@@ -381,7 +389,7 @@ public class DockerResource extends ExternalResource {
 
     /**
      * Set application ports which will be used inside the container and exposed outside of the container by mapping to
-     * random ports. Also see {@link #getExposedHostPort(int)} for more information.
+     * {@link #setExposedPortsRange(String)} or random ports. Also see {@link #getExposedHostPort(int)} for more information.
      *
      * @param applicationPorts Set of application ports
      * @return Builder
@@ -400,6 +408,17 @@ public class DockerResource extends ExternalResource {
      */
     public T addApplicationPort(int applicationPort) {
       this.applicationPorts = SetUtils.addToSet(this.applicationPorts, applicationPort);
+      return (T) this;
+    }
+
+    /**
+     * Set port range which will be used for exposing ports inside the container to the outside of the container.
+     *
+     * @param exposedPortsRange String in format "firstPort-lastPort" which is used for setting a range of ports
+     * @return Builder
+     */
+    public T setExposedPortsRange(String exposedPortsRange) {
+      this.exposedPortsRange = exposedPortsRange;
       return (T) this;
     }
 
