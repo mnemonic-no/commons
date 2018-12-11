@@ -116,6 +116,13 @@ public class DockerResource extends ExternalResource {
   }
 
   /**
+   * @return the exposed host where this resource is available, based on the DOCKER_HOST system environment variable
+   */
+  public String getExposedHost() {
+    return DockerTestUtils.getDockerHost();
+  }
+
+  /**
    * DockerResource will map the application ports, which are the ports applications listen to inside the container,
    * to random ports on the host machine, which can be used to communicate with the applications. For example,
    * the application port 8080 could be mapped to random port 33333 on the host machine.
@@ -460,8 +467,8 @@ public class DockerResource extends ExternalResource {
     /**
      * Add environment variable for container
      *
-     * @param key    Variable name
-     * @param value  Variable value
+     * @param key   Variable name
+     * @param value Variable value
      * @return Builder
      */
     public T addEnvironmentVariable(String key, String value) {
