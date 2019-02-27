@@ -9,7 +9,7 @@
   <parent>
     <groupId>no.mnemonic.commons</groupId>
     <artifactId>parent</artifactId>
-    <version>0.2.19-SNAPSHOT</version>
+    <version>0.2.19</version>
   </parent>
 
   <dependencies>
