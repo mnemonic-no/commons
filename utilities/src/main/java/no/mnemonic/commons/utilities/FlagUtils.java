@@ -109,7 +109,8 @@ public class FlagUtils {
    * @param bit bits to change
    * @param set if true, set the bits, if not unset them
    * @return updated bitmap with specified bits updated
-   * @see {@link #unsetBit(int, int)} and {@link #setBit(int, int)}
+   * @see #unsetBit(int, int)
+   * @see #setBit(int, int)
    */
   public static int changeBit(int flags, int bit, boolean set) {
     if (set) return setBit(flags, bit);
@@ -122,7 +123,8 @@ public class FlagUtils {
    * @param bit bits to change
    * @param set if true, set the bits, if not unset them
    * @return updated bitmap with specified bits updated
-   * @see {@link #unsetBit(long, long)} and {@link #setBit(long, long)}
+   * @see #unsetBit(long, long)
+   * @see #setBit(long, long)
    */
   public static long changeBit(long flags, long bit, boolean set) {
     if (set) return setBit(flags, bit);

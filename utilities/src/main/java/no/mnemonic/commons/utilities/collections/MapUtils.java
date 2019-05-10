@@ -218,7 +218,13 @@ public class MapUtils {
   }
 
   /**
-   * @return a Pair of key/val
+   * Convenience method to create a key/value {@link Pair}.
+   *
+   * @param key Key
+   * @param val Value
+   * @param <K> Type of key
+   * @param <V> Type of value
+   * @return A key/value pair
    */
   public static <K, V> Pair<K, V> pair(K key, V val) {
     return Pair.T(key, val);

@@ -14,7 +14,7 @@ public interface Metrics extends Serializable {
   /**
    * For metrics with data, this will return a map of keys with metrics.
    *
-   * @return a map of all metric keys->values set into this object, or null if no data
+   * @return a map of all metric keys-&gt;values set into this object, or null if no data
    */
   Map<String, Number> getData();
 
@@ -29,7 +29,7 @@ public interface Metrics extends Serializable {
   /**
    * For metrics with submetrics, this will return a map of keys with submetrics.
    *
-   * @return a map of all submetrics (name -> metrics) set into this object, or null if no submetrics
+   * @return a map of all submetrics (name -&gt; metrics) set into this object, or null if no submetrics
    */
   Map<String, Metrics> getSubMetrics();
 

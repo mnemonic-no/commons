@@ -19,6 +19,10 @@ public class StreamUtils {
   /**
    * Same as {@link #writeUntilEOF(InputStream, OutputStream, int, StreamProgressMonitor...)},
    * with default read buffer size and no monitors.
+   *
+   * @param is input stream to read from
+   * @param os outputstream to write to
+   * @throws IOException if an exception occurs while reading
    */
   public static void writeUntilEOF(InputStream is, OutputStream os) throws IOException {
     writeUntilEOF(is, os, 1024);

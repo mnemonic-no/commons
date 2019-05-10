@@ -47,7 +47,7 @@ public class LambdaUtils {
    * Convenience method to call a method/lambda without having to wrap with try/catch
    *
    * <code>
-   *   LambdaUtils.tryTo(()->doSomethingThatMightThrowAnException(), error->LOGGER.warn("Error doing something", error));
+   *   LambdaUtils.tryTo(()-&gt;doSomethingThatMightThrowAnException(), error-&gt;LOGGER.warn("Error doing something", error));
    * </code>
    *
    * @param callable task to call

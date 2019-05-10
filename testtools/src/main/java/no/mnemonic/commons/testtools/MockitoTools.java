@@ -10,7 +10,7 @@ public class MockitoTools {
   /**
    * Simplify testing with mockito and argThat by doing
    * <p>
-   * verify(mock).method(match(arg->arg.isSomething()));
+   * verify(mock).method(match(arg-&gt;arg.isSomething()));
    *
    * @param predicate predicate to match the expected argument
    * @param <T>       the argument type
@@ -24,7 +24,7 @@ public class MockitoTools {
    * Same as {@link #match(Predicate)}, but with a specific expected argument class, to use if the verified
    * method takes a superclass of expected argument
    *
-   * verify(mock).method(match(c->c.getValue()==expectedValue, ExpectedClass.class))
+   * verify(mock).method(match(c-&gt;c.getValue()==expectedValue, ExpectedClass.class))
    * @param expectedClass Expected argument class
    * @param predicate predicate to test on the argument
    * @param <T> mocked method argument type
