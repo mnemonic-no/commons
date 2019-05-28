@@ -1,6 +1,7 @@
 package no.mnemonic.commons.container.providers;
 
 import com.google.inject.*;
+import com.google.inject.Module;
 import com.google.inject.name.Names;
 import com.google.inject.spi.DefaultBindingScopingVisitor;
 import no.mnemonic.commons.utilities.collections.SetUtils;
