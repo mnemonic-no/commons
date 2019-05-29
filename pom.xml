@@ -3,7 +3,7 @@
   <groupId>no.mnemonic.commons</groupId>
   <artifactId>parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.2.22-SNAPSHOT</version>
+  <version>0.3.0-SNAPSHOT</version>
 
   <name>mnemonic commons</name>
   <description>Reusable Java utilities</description>
@@ -41,13 +41,12 @@
     <jdk.version>1.8</jdk.version>
 
     <!-- external dependencies -->
-    <achilles.version>6.0.2</achilles.version>
-    <docker.client.version>8.15.3</docker.client.version>
+    <docker.client.version>8.16.0</docker.client.version>
     <guice.version>4.2.2</guice.version>
     <junit.version>4.12</junit.version>
     <log4j.version>2.11.2</log4j.version>
     <mockito.version>2.27.0</mockito.version>
-    <spring.version>4.3.23.RELEASE</spring.version>
+    <spring.version>5.1.7.RELEASE</spring.version>
 
     <!-- build dependencies -->
     <maven.clean.version>3.1.0</maven.clean.version>

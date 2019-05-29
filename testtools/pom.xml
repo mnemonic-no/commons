@@ -9,7 +9,7 @@
   <parent>
     <groupId>no.mnemonic.commons</groupId>
     <artifactId>parent</artifactId>
-    <version>0.2.22-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
   </parent>
 
   <dependencies>
@@ -27,13 +27,6 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-    </dependency>
-    <!-- Users must provide the correct Achilles version matching the Cassandra version in use. -->
-    <dependency>
-      <groupId>info.archinnov</groupId>
-      <artifactId>achilles-embedded</artifactId>
-      <version>${achilles.version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 
