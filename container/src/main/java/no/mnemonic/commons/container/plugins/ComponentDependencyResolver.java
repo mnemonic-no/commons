@@ -19,4 +19,12 @@ public interface ComponentDependencyResolver {
    */
   Collection<?> resolveDependencies(Object obj);
 
+  /**
+   * Allow resolver to scan all objects, to discover dependency alias before resolving dependencies.
+   * @see no.mnemonic.commons.component.DependencyProvider
+   *
+   * @param objects all available objects
+   */
+  void scan(Collection<Object> objects);
+
 }

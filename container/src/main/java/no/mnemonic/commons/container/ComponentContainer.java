@@ -1,7 +1,6 @@
 package no.mnemonic.commons.container;
 
 import no.mnemonic.commons.component.*;
-import no.mnemonic.commons.component.ComponentState;
 import no.mnemonic.commons.container.plugins.ComponentContainerPlugin;
 import no.mnemonic.commons.container.plugins.ComponentDependencyResolver;
 import no.mnemonic.commons.container.plugins.ComponentLifecycleHandler;
@@ -12,6 +11,7 @@ import no.mnemonic.commons.container.providers.SimpleBeanProvider;
 import no.mnemonic.commons.logging.Logger;
 import no.mnemonic.commons.logging.Logging;
 import no.mnemonic.commons.utilities.ObjectUtils;
+import no.mnemonic.commons.utilities.collections.ListUtils;
 import no.mnemonic.commons.utilities.collections.MapUtils;
 
 import java.util.*;
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static no.mnemonic.commons.component.ComponentState.*;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
-import static no.mnemonic.commons.utilities.lambda.LambdaUtils.*;
+import static no.mnemonic.commons.utilities.lambda.LambdaUtils.tryTo;
 
 /**
  * ComponentContainer
@@ -136,6 +136,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
   /**
    * Initialize this container, and any subcontainers it may have
+   * @return The initialized container
    */
   public ComponentContainer initialize() {
     try {
@@ -407,6 +408,9 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   }
 
   private void resolveDependencies() {
+    //make all dependency resolvers scan all objects
+    dependencyResolvers.forEach(r->r.scan(ListUtils.list(nodes.values(), ComponentNode::getObject)));
+    //then resolve dependencies for each node
     nodes.keySet().forEach(oid -> resolveDependsOn(nodes.get(oid)));
   }
 

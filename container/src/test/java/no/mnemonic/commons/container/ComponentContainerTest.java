@@ -34,8 +34,8 @@ public class ComponentContainerTest {
 
   @Test(expected = ComponentConfigurationException.class)
   public void testValidationErrorThrowsComponentInitializationException() {
-    doAnswer(i -> ((ValidationContext)i.getArgument(0)).addError(validationAspect, "error"))
-        .when(validationAspect).validate(any());
+    doAnswer(i -> ((ValidationContext) i.getArgument(0)).addError(validationAspect, "error"))
+            .when(validationAspect).validate(any());
     ComponentContainer container = ComponentContainer.create(validationAspect);
     container.initialize();
   }
@@ -76,14 +76,15 @@ public class ComponentContainerTest {
   public void testDependencyByGetterAnnotationDuringStartup() {
     Consumer<Object> startConsumer = mock(Consumer.class);
     Consumer<Object> stopConsumer = mock(Consumer.class);
-    ComponentA a = new ComponentA(startConsumer, stopConsumer);
+    ComponentA a = new ComponentA();
+    ComponentAProvider ap = new ComponentAProvider(a, startConsumer, stopConsumer);
     ComponentB b = new ComponentB(startConsumer, stopConsumer, a);
     ComponentC c = new ComponentC(startConsumer, stopConsumer, a, b);
     ComponentD d = new ComponentD(startConsumer, stopConsumer, a, b, c);
     InOrder order = inOrder(startConsumer);
-    ComponentContainer container = ComponentContainer.create(a, b, c, d);
+    ComponentContainer container = ComponentContainer.create(ap, a, b, c, d);
     container.initialize();
-    order.verify(startConsumer).accept(a);
+    order.verify(startConsumer).accept(ap);
     order.verify(startConsumer).accept(b);
     order.verify(startConsumer).accept(c);
     order.verify(startConsumer).accept(d);
@@ -93,18 +94,19 @@ public class ComponentContainerTest {
   public void testDependencyByGetterAnnotationDuringShutdown() {
     Consumer<Object> startConsumer = mock(Consumer.class);
     Consumer<Object> stopConsumer = mock(Consumer.class);
-    ComponentA a = new ComponentA(startConsumer, stopConsumer);
+    ComponentA a = new ComponentA();
+    ComponentAProvider ap = new ComponentAProvider(a, startConsumer, stopConsumer);
     ComponentB b = new ComponentB(startConsumer, stopConsumer, a);
     ComponentC c = new ComponentC(startConsumer, stopConsumer, a, b);
     ComponentD d = new ComponentD(startConsumer, stopConsumer, a, b, c);
     InOrder order = inOrder(stopConsumer);
-    ComponentContainer container = ComponentContainer.create(a, b, c, d);
+    ComponentContainer container = ComponentContainer.create(ap, a, b, c, d);
     container.initialize();
     container.destroy();
     order.verify(stopConsumer).accept(d);
     order.verify(stopConsumer).accept(c);
     order.verify(stopConsumer).accept(b);
-    order.verify(stopConsumer).accept(a);
+    order.verify(stopConsumer).accept(ap);
   }
 
   public abstract class TestClass implements LifecycleAspect {
@@ -118,7 +120,7 @@ public class ComponentContainerTest {
 
     @Override
     public String toString() {
-      return getClass().getSuperclass().getName();
+      return getClass().getName();
     }
 
     @Override
@@ -132,11 +134,40 @@ public class ComponentContainerTest {
     }
   }
 
-  public class ComponentA extends TestClass {
-    public ComponentA(Consumer<Object> startConsumer, Consumer<Object> stopConsumer) {
-      super(startConsumer, stopConsumer);
+  public class ComponentA {
+    public ComponentA() {
+      super();
     }
   }
+
+  public class ComponentAProvider implements DependencyProvider, LifecycleAspect {
+
+    private final ComponentA componentA;
+    private final Consumer<Object> startConsumer;
+    private final Consumer<Object> stopConsumer;
+
+    public ComponentAProvider(ComponentA componentA, Consumer<Object> startConsumer, Consumer<Object> stopConsumer) {
+      this.componentA = componentA;
+      this.startConsumer = startConsumer;
+      this.stopConsumer = stopConsumer;
+    }
+
+    @Override
+    public Object getProvidedDependency() {
+      return componentA;
+    }
+
+    @Override
+    public void startComponent() {
+      startConsumer.accept(this);
+    }
+
+    @Override
+    public void stopComponent() {
+      stopConsumer.accept(this);
+    }
+  }
+
   public class ComponentB extends TestClass {
     ComponentA componentA;
 
