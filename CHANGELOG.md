@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.2] - 2019-09-09
+### Changed
+- Upgrade Log4j from 2.11.2 to 2.12.1.
+- Upgrade Mockito from 2.27.0 to 3.0.0.
+- Upgrade Spring from 5.1.7.RELEASE to 5.1.9.RELEASE.
+
 ## [0.3.1] - 2019-09-03
 ### Added
 ARGUS-14665 
