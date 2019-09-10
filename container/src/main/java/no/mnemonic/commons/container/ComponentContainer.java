@@ -401,6 +401,12 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
     // make all nodes available
     beans.getBeans().forEach((oid, o) -> {
+      //deduplicate objects, to avoid same object being registered in two different dependency nodes
+      if (objectNodeMap.containsKey(o)) {
+        ComponentNode n = objectNodeMap.get(o);
+        nodes.put(oid, n);
+        return;
+      }
       ComponentNode n = new ComponentNode(oid, o);
       nodes.put(oid, n);
       objectNodeMap.put(o, n);

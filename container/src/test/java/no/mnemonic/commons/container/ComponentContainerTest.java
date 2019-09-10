@@ -1,14 +1,19 @@
 package no.mnemonic.commons.container;
 
 import no.mnemonic.commons.component.*;
+import no.mnemonic.commons.container.providers.BeanProvider;
+import no.mnemonic.commons.utilities.collections.MapUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
+import static no.mnemonic.commons.utilities.collections.MapUtils.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -22,6 +27,31 @@ public class ComponentContainerTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+  }
+
+  @Test
+  public void testDeduplicateObjects() {
+    ComponentContainer container = ComponentContainer.create(new BeanProvider() {
+      @Override
+      public <T> Optional<T> getBean(Class<T> ofType) {
+        return Optional.empty();
+      }
+
+      @Override
+      public <T> Map<String, T> getBeans(Class<T> ofType) {
+        return map();
+      }
+
+      @Override
+      public Map<String, Object> getBeans() {
+        return map(
+                pair("o1", lifecycleAspect),
+                pair("o2", lifecycleAspect)
+        );
+      }
+    });
+    container.initialize();
+    verify(lifecycleAspect, times(1)).startComponent();
   }
 
   @Test

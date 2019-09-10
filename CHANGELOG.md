@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.3] - 2019-09-10
+### Changed
+ARGUS-14772
+- Avoid duplicate objects in dependency tree, when same singleton object is registered via multiple identifiers
+
 ## [0.3.2] - 2019-09-09
 ### Changed
 - Upgrade Log4j from 2.11.2 to 2.12.1.
