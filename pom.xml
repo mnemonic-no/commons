@@ -3,7 +3,7 @@
   <groupId>no.mnemonic.commons</groupId>
   <artifactId>parent</artifactId>
   <packaging>pom</packaging>
-  <version>0.3.4</version>
+  <version>0.3.5-SNAPSHOT</version>
 
   <name>mnemonic commons</name>
   <description>Reusable Java utilities</description>
@@ -80,7 +80,7 @@
     <connection>scm:git:git://github.com/mnemonic-no/commons.git</connection>
     <developerConnection>scm:git:ssh://github.com:mnemonic-no/commons.git</developerConnection>
     <url>https://github.com/mnemonic-no/commons</url>
-    <tag>parent-0.3.4</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <build>
