@@ -35,7 +35,7 @@ import org.junit.rules.ExternalResource;
  */
 public class SingletonDockerResourceWrapper<T extends DockerResource> extends ExternalResource {
 
-  private T dockerResource;
+  private final T dockerResource;
 
   private SingletonDockerResourceWrapper(T dockerResource) {
     if (dockerResource == null) throw new IllegalArgumentException("dockerResource was null");
@@ -50,7 +50,9 @@ public class SingletonDockerResourceWrapper<T extends DockerResource> extends Ex
   }
 
   /**
-   * @return Wrapped singleton {@link DockerResource}
+   * Return wrapped {@link DockerResource}.
+   *
+   * @return Wrapped {@link DockerResource}
    */
   public T getDockerResource() {
     return dockerResource;
@@ -61,27 +63,33 @@ public class SingletonDockerResourceWrapper<T extends DockerResource> extends Ex
    *
    * @return Builder object
    */
-  public static Builder builder() {
-    return new Builder();
+  public static <T extends DockerResource> Builder<T> builder() {
+    return new Builder<>();
   }
 
-  public static class Builder {
-    private DockerResource dockerResource;
+  /**
+   * Builder to create a {@link SingletonDockerResourceWrapper}.
+   */
+  public static class Builder<T extends DockerResource> {
+    private T dockerResource;
 
     /**
+     * Build a {@link SingletonDockerResourceWrapper} instance wrapping another {@link DockerResource}.
+     *
      * @return Configured {@link SingletonDockerResourceWrapper}
      */
-    public SingletonDockerResourceWrapper build() {
+    public SingletonDockerResourceWrapper<T> build() {
       return new SingletonDockerResourceWrapper<>(dockerResource);
     }
 
     /**
+     * Set {@link DockerResource} which will be wrapped as a singleton.
+     *
      * @param dockerResource Preconfigured {@link DockerResource} which needs to be wrapped
      */
-    public Builder setDockerResource(DockerResource dockerResource) {
+    public Builder<T> setDockerResource(T dockerResource) {
       this.dockerResource = dockerResource;
       return this;
     }
   }
-
 }

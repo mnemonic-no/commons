@@ -1,22 +1,23 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ExecCreation;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.LogStream;
+import org.mandas.docker.client.exceptions.DockerException;
+import org.mandas.docker.client.messages.ContainerCreation;
+import org.mandas.docker.client.messages.ExecCreation;
 import org.mockito.Mock;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -28,8 +29,6 @@ public class ElasticSearchDockerResourceTest {
   private static final String[] DELETE_ALL_INDICES_COMMAND = {"curl", "--silent", "--show-error", "-XDELETE", "localhost:9200/_all"};
   private static final String REACHABILITY_SUCCESSFUL_OUTPUT = "1510840808 14:00:08 docker-cluster green 1 1 0 0 0 0 0 0 - 100.0%";
 
-  @Rule
-  public ExpectedException exception = ExpectedException.none();
   @Mock
   private DockerClient dockerClient;
 
@@ -50,18 +49,19 @@ public class ElasticSearchDockerResourceTest {
 
   @Test
   public void testIsContainerReachableFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException("ElasticSearch reachability");
-    when(dockerClient.execCreate(any(), any(), (DockerClient.ExecCreateParam[]) any())).thenThrow(DockerException.class);
-    resource.before();
+    when(dockerClient.execCreate(any(), any(), any())).thenThrow(DockerException.class);
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("ElasticSearch reachability"));
   }
 
   @Test
   public void testIsContainerReachableFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException("ElasticSearch reachability");
-    when(dockerClient.execCreate(any(), any(), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), any(), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("ElasticSearch reachability"));
   }
 
   @Test(expected = TimeoutException.class)
@@ -75,39 +75,39 @@ public class ElasticSearchDockerResourceTest {
     mockExecute(REACHABILITY_COMMAND, REACHABILITY_SUCCESSFUL_OUTPUT);
     resource.before();
 
-    verify(dockerClient).execCreate(any(), eq(REACHABILITY_COMMAND), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(REACHABILITY_COMMAND), any());
     verify(dockerClient).execStart(any());
   }
 
   @Test
   public void testDeleteIndicesFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException("Could not execute 'curl' to delete indices");
     mockExecute(REACHABILITY_COMMAND, REACHABILITY_SUCCESSFUL_OUTPUT);
-    when(dockerClient.execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), (DockerClient.ExecCreateParam[]) any()))
-            .thenThrow(DockerException.class);
+    when(dockerClient.execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), any())).thenThrow(DockerException.class);
+
     resource.before();
-    resource.deleteIndices();
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.deleteIndices());
+    assertTrue(ex.getMessage().contains("Could not execute 'curl' to delete indices"));
   }
 
   @Test
   public void testDeleteIndicesFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException("Could not execute 'curl' to delete indices");
     mockExecute(REACHABILITY_COMMAND, REACHABILITY_SUCCESSFUL_OUTPUT);
-    when(dockerClient.execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
+
     resource.before();
-    resource.deleteIndices();
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.deleteIndices());
+    assertTrue(ex.getMessage().contains("Could not execute 'curl' to delete indices"));
   }
 
   @Test
   public void testDeleteIndicesFailsOnExecuteCommand() throws Throwable {
-    exception.expect(IllegalStateException.class);
-    exception.expectMessage("Could not delete indices");
     mockExecute(REACHABILITY_COMMAND, REACHABILITY_SUCCESSFUL_OUTPUT);
     mockExecute(DELETE_ALL_INDICES_COMMAND, "{\"error\":true}");
+
     resource.before();
-    resource.deleteIndices();
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.deleteIndices());
+    assertTrue(ex.getMessage().contains("Could not delete indices"));
   }
 
   @Test
@@ -117,7 +117,7 @@ public class ElasticSearchDockerResourceTest {
     resource.before();
     resource.deleteIndices();
 
-    verify(dockerClient).execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), any());
   }
 
   @Test
@@ -136,7 +136,7 @@ public class ElasticSearchDockerResourceTest {
     elastic.before();
     elastic.deleteIndices();
 
-    verify(dockerClient).execCreate(any(), eq(cmd), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(cmd), any());
   }
 
   private void mockStartContainer() throws Exception {
@@ -149,15 +149,21 @@ public class ElasticSearchDockerResourceTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create(executionID, null));
+    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 
-  private void expectIllegalStateException(String phrase) {
-    // Make sure that correct IllegalStateException is thrown and that wrong/missing mocking will be caught.
-    exception.expect(IllegalStateException.class);
-    exception.expectCause(instanceOf(DockerException.class));
-    exception.expectMessage(phrase);
+  private ExecCreation execCreation(String executionID) {
+    return new ExecCreation() {
+      @Override
+      public String id() {
+        return executionID;
+      }
+
+      @Override
+      public List<String> warnings() {
+        return Collections.emptyList();
+      }
+    };
   }
 }

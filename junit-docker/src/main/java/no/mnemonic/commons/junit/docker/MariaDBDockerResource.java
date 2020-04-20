@@ -1,9 +1,9 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.HostConfig;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.messages.HostConfig;
 
 import java.net.URL;
 import java.nio.file.Files;
@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.spotify.docker.client.DockerClient.ExecCreateParam.*;
 import static no.mnemonic.commons.utilities.collections.MapUtils.Pair.T;
 import static no.mnemonic.commons.utilities.collections.MapUtils.map;
+import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
 
 /**
  * MariaDBDockerResource is a JUnit resource which can be used to write integration tests against a MariaDB
@@ -50,27 +50,30 @@ public class MariaDBDockerResource extends DockerResource {
     this.truncateScript = !StringUtils.isBlank(truncateScript) ? checkFileExists(truncateScript) : null;
   }
 
-  @Override
-  protected boolean isContainerReachable() {
-    try {
-      String[] cmd = {"mysqladmin", "-uroot", "-proot", "ping"};
-      String id = getDockerClient().execCreate(getContainerID(), cmd, attachStdout(), attachStderr(), attachStdin()).id();
-      String output = getDockerClient().execStart(id).readFully();
-
-      return SUCCESS_MESSAGE.equals(output);
-    } catch (Exception e) {
-      throw new IllegalStateException("Unable to reach container", e);
-    }
+  /**
+   * Truncate data stored inside the database by executing the truncate SQL script.
+   *
+   * @throws IllegalStateException If SQL script could not be executed
+   */
+  public void truncate() {
+    ObjectUtils.ifNotNullDo(truncateScript, this::executeSqlScript);
   }
 
-  @Override
-  protected void prepareContainer() {
-    copyFilesToContainer();
-    ObjectUtils.ifNotNullDo(setupScript, this::executeSqlScript);
+  /**
+   * Create builder for MariaDBDockerResource.
+   *
+   * @return Builder object
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
-
-
+  /**
+   * Adds MariaDB specific host configuration to default configuration from {@link DockerResource}.
+   *
+   * @param config Default configuration as set up by DockerResource
+   * @return Modified host configuration
+   */
   @Override
   protected HostConfig additionalHostConfig(HostConfig config) {
     return config.toBuilder()
@@ -82,12 +85,34 @@ public class MariaDBDockerResource extends DockerResource {
   }
 
   /**
-   * Truncate data stored inside database by executing the truncate SQL script.
+   * Verifies that MariaDB is reachable by issuing a simple mysqladmin command inside the MariaDB Docker container.
+   *
+   * @return True if mysqladmin command returns successfully
+   * @throws IllegalStateException If mysqladmin command could not be executed
+   */
+  @Override
+  protected boolean isContainerReachable() {
+    try {
+      // Workaround for https://github.com/spotify/docker-client/issues/513: also attach stdin.
+      String[] cmd = {"mysqladmin", "-uroot", "-proot", "ping"};
+      String id = getDockerClient().execCreate(getContainerID(), cmd, attachStdout(), attachStderr(), attachStdin()).id();
+      String output = getDockerClient().execStart(id).readFully();
+
+      return SUCCESS_MESSAGE.equals(output);
+    } catch (Exception ex) {
+      throw new IllegalStateException("Could not execute 'mysqladmin' to test for MariaDB reachability.", ex);
+    }
+  }
+
+  /**
+   * Initializes MariaDB by executing the set up SQL script.
    *
    * @throws IllegalStateException If SQL script could not be executed
    */
-  public void truncate() {
-    ObjectUtils.ifNotNullDo(truncateScript, this::executeSqlScript);
+  @Override
+  protected void prepareContainer() {
+    copyFilesToContainer();
+    ObjectUtils.ifNotNullDo(setupScript, this::executeSqlScript);
   }
 
   private Path checkFileExists(String fileName) {
@@ -116,33 +141,33 @@ public class MariaDBDockerResource extends DockerResource {
 
   private void executeSqlScript(Path script) {
     String output;
+
     try {
       // Workaround for https://github.com/spotify/docker-client/issues/513: also attach stdin.
-      String id = getDockerClient().execCreate(getContainerID(),
-              new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/" + script.getFileName()},
-              attachStdout(), attachStderr(), attachStdin()).id();
+      String[] cmd = {"mysql", "-uroot", "-proot", "-e", "source /tmp/" + script.getFileName()};
+      String id = getDockerClient().execCreate(getContainerID(), cmd, attachStdout(), attachStderr(), attachStdin()).id();
       output = getDockerClient().execStart(id).readFully();
     } catch (Exception ex) {
       throw new IllegalStateException(String.format("Could not execute SQL script %s.", script.getFileName()), ex);
     }
 
     if (!StringUtils.isBlank(output)) {
-      throw new IllegalStateException(String.format("Evaluation of SQL script %s failed.\n%s", script.getFileName(), output));
+      throw new IllegalStateException(String.format("Evaluation of SQL script %s failed.%n%s", script.getFileName(), output));
     }
-  }
-
-  public static Builder builder() {
-    return new Builder();
   }
 
   /**
    * Builder to create {@link MariaDBDockerResource} which extends {@link DockerResource.Builder}
    */
   public static class Builder extends DockerResource.Builder<Builder> {
-
     private String setupScript;
     private String truncateScript;
 
+    /**
+     * Build a configured MariaDBDockerResource.
+     *
+     * @return Configured MariaDBDockerResource
+     */
     @Override
     public MariaDBDockerResource build() {
       //add 3306 by default
@@ -154,9 +179,11 @@ public class MariaDBDockerResource extends DockerResource {
     }
 
     /**
-     * Script to run on initial setup to prepare the database
-     * @param setupScript script path and filename
-     * @return this builder
+     * Set file name of SQL start up script. The file needs to be available on the classpath usually from the test
+     * resources folder. Providing a start up script is optional.
+     *
+     * @param setupScript File name of start up script
+     * @return Builder
      */
     public Builder setSetupScript(String setupScript) {
       this.setupScript = setupScript;
@@ -164,14 +191,15 @@ public class MariaDBDockerResource extends DockerResource {
     }
 
     /**
-     * Script to run on truncate(). Use to reset the database between tests.
-     * @param truncateScript script path and filename
-     * @return thils builder
+     * Set file name of SQL truncate script. The file needs to be available on the classpath usually from the test
+     * resources folder. Providing a truncate script is optional.
+     *
+     * @param truncateScript File name of truncate script
+     * @return Builder
      */
     public Builder setTruncateScript(String truncateScript) {
       this.truncateScript = truncateScript;
       return this;
     }
   }
-
 }

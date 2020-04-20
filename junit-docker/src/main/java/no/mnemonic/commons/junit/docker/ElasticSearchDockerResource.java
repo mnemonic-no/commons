@@ -1,17 +1,17 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
 import no.mnemonic.commons.utilities.collections.SetUtils;
+import org.mandas.docker.client.DockerClient;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.spotify.docker.client.DockerClient.ExecCreateParam.*;
+import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
 
 /**
  * ElasticSearchDockerResource is a JUnit resource which can be used to write integration tests against an ElasticSearch
@@ -74,7 +74,7 @@ public class ElasticSearchDockerResource extends DockerResource {
 
     // Verify that indices were deleted successfully.
     if (StringUtils.isBlank(output) || !output.contains("{\"acknowledged\":true}")) {
-      throw new IllegalStateException(String.format("Could not delete indices %s.\n%s", indicesToDelete, output));
+      throw new IllegalStateException(String.format("Could not delete indices %s.%n%s", indicesToDelete, output));
     }
   }
 

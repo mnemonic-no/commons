@@ -41,8 +41,9 @@
     <jdk.version>1.8</jdk.version>
 
     <!-- external dependencies -->
-    <docker.client.version>8.16.0</docker.client.version>
+    <docker.client.version>3.2.1</docker.client.version>
     <guice.version>4.2.2</guice.version>
+    <javax.activation.version>1.1.1</javax.activation.version>
     <junit.version>4.13</junit.version>
     <log4j.version>2.13.0</log4j.version>
     <mockito.version>3.2.4</mockito.version>
@@ -227,7 +228,7 @@
           <!-- Consolidate license names. -->
           <licenseMerges>
             <licenseMerge>Apache 2|Apache License 2.0|Apache Software License - Version 2.0|Apache License, Version 2.0|The Apache Software License, Version 2.0</licenseMerge>
-            <licenseMerge>CDDL|CDDL 1.1|CDDL + GPLv2 with classpath exception</licenseMerge>
+            <licenseMerge>CDDL|CDDL 1.1|COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0|CDDL + GPLv2 with classpath exception</licenseMerge>
             <licenseMerge>Eclipse|Eclipse Public License 1.0|Eclipse Public License - Version 1.0|Eclipse Public License - v 1.0</licenseMerge>
             <licenseMerge>MIT|The MIT License</licenseMerge>
           </licenseMerges>

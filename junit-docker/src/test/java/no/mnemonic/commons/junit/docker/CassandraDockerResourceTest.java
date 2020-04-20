@@ -1,23 +1,21 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ExecCreation;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.LogStream;
+import org.mandas.docker.client.exceptions.DockerException;
+import org.mandas.docker.client.messages.ContainerCreation;
+import org.mandas.docker.client.messages.ExecCreation;
 import org.mockito.Mock;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.*;
@@ -25,8 +23,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 public class CassandraDockerResourceTest {
 
-  @Rule
-  public ExpectedException exception = ExpectedException.none();
   @Mock
   private DockerClient dockerClient;
 
@@ -75,18 +71,19 @@ public class CassandraDockerResourceTest {
 
   @Test
   public void testIsContainerReachableFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException("Could not execute 'cqlsh'");
-    when(dockerClient.execCreate(any(), any(), (DockerClient.ExecCreateParam[]) any())).thenThrow(DockerException.class);
-    resource.before();
+    when(dockerClient.execCreate(any(), any(), any())).thenThrow(DockerException.class);
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not execute 'cqlsh'"));
   }
 
   @Test
   public void testIsContainerReachableFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException("Could not execute 'cqlsh'");
-    when(dockerClient.execCreate(any(), any(), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), any(), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not execute 'cqlsh'"));
   }
 
   @Test(expected = TimeoutException.class)
@@ -97,46 +94,47 @@ public class CassandraDockerResourceTest {
 
   @Test
   public void testPrepareContainerFailsOnCopyToContainerException() throws Throwable {
-    expectIllegalStateException("Could not copy files");
     mockTestReachability("Success");
     doThrow(DockerException.class).when(dockerClient).copyToContainer(isA(Path.class), any(), any());
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not copy files"));
   }
 
   @Test
   public void testPrepareContainerFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException("Could not execute CQL script");
     mockTestReachability("Success");
-    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), (DockerClient.ExecCreateParam[]) any()))
-            .thenThrow(DockerException.class);
-    resource.before();
+    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any())).thenThrow(DockerException.class);
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not execute CQL script"));
   }
 
   @Test
   public void testPrepareContainerFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException("Could not execute CQL script");
     mockTestReachability("Success");
-    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not execute CQL script"));
   }
 
   @Test
   public void testPrepareContainerFailsOnExecuteScript() throws Throwable {
-    exception.expect(IllegalStateException.class);
-    exception.expectMessage("Evaluation of CQL script");
     mockTestReachability("Success");
     mockExecuteScript("setup.cql", "Failure");
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Evaluation of CQL script"));
   }
 
   @Test
   public void testInitializeSuccessful() throws Throwable {
     mockAndExecuteSuccessfulInitialization();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), (DockerClient.ExecCreateParam[]) any());
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any());
     verify(dockerClient, times(2)).execStart(any());
     verify(dockerClient, times(2)).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -146,7 +144,7 @@ public class CassandraDockerResourceTest {
     mockTestReachability("Success");
     resourceWithoutScripts.before();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any());
     verify(dockerClient).execStart(any());
     verify(dockerClient, never()).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -164,30 +162,30 @@ public class CassandraDockerResourceTest {
 
   @Test
   public void testTruncateFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException("Could not execute CQL script");
-    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), (DockerClient.ExecCreateParam[]) any()))
-            .thenThrow(DockerException.class);
+    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any())).thenThrow(DockerException.class);
     mockAndExecuteSuccessfulInitialization();
-    resource.truncate();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.truncate());
+    assertTrue(ex.getMessage().contains("Could not execute CQL script"));
   }
 
   @Test
   public void testTruncateFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException("Could not execute CQL script");
-    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
     mockAndExecuteSuccessfulInitialization();
-    resource.truncate();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.truncate());
+    assertTrue(ex.getMessage().contains("Could not execute CQL script"));
   }
 
   @Test
   public void testTruncateFailsOnExecuteScript() throws Throwable {
-    exception.expect(IllegalStateException.class);
-    exception.expectMessage("Evaluation of CQL script");
     mockExecuteScript("truncate.cql", "Failure");
     mockAndExecuteSuccessfulInitialization();
-    resource.truncate();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.truncate());
+    assertTrue(ex.getMessage().contains("Evaluation of CQL script"));
   }
 
   @Test
@@ -196,7 +194,7 @@ public class CassandraDockerResourceTest {
     mockAndExecuteSuccessfulInitialization();
     resource.truncate();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any());
   }
 
   @Test
@@ -205,7 +203,7 @@ public class CassandraDockerResourceTest {
     resourceWithoutScripts.before();
     resourceWithoutScripts.truncate();
 
-    verify(dockerClient, never()).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient, never()).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any());
   }
 
   private void mockAndExecuteSuccessfulInitialization() throws Throwable {
@@ -232,15 +230,21 @@ public class CassandraDockerResourceTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create(executionID, null));
+    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 
-  private void expectIllegalStateException(String phrase) {
-    // Make sure that correct IllegalStateException is thrown and that wrong/missing mocking will be caught.
-    exception.expect(IllegalStateException.class);
-    exception.expectCause(instanceOf(DockerException.class));
-    exception.expectMessage(phrase);
+  private ExecCreation execCreation(String executionID) {
+    return new ExecCreation() {
+      @Override
+      public String id() {
+        return executionID;
+      }
+
+      @Override
+      public List<String> warnings() {
+        return Collections.emptyList();
+      }
+    };
   }
 }

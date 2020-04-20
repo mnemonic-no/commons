@@ -1,9 +1,9 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.HostConfig;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.messages.HostConfig;
 
 import java.net.URL;
 import java.nio.file.Files;
@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static com.spotify.docker.client.DockerClient.ExecCreateParam.*;
 import static no.mnemonic.commons.utilities.collections.MapUtils.Pair.T;
 import static no.mnemonic.commons.utilities.collections.MapUtils.map;
+import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
 
 /**
  * CassandraDockerResource is a JUnit resource which can be used to write integration tests against a Cassandra server
@@ -160,7 +160,7 @@ public class CassandraDockerResource extends DockerResource {
     }
 
     if (!StringUtils.isBlank(output)) {
-      throw new IllegalStateException(String.format("Evaluation of CQL script %s failed.\n%s", script.getFileName(), output));
+      throw new IllegalStateException(String.format("Evaluation of CQL script %s failed.%n%s", script.getFileName(), output));
     }
   }
 

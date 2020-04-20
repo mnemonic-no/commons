@@ -1,11 +1,5 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.PortBinding;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
@@ -13,6 +7,12 @@ import no.mnemonic.commons.utilities.collections.MapUtils;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 import no.mnemonic.commons.utilities.lambda.LambdaUtils;
 import org.junit.rules.ExternalResource;
+import org.mandas.docker.client.DefaultDockerClient;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.messages.ContainerConfig;
+import org.mandas.docker.client.messages.ContainerInfo;
+import org.mandas.docker.client.messages.HostConfig;
+import org.mandas.docker.client.messages.PortBinding;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -116,7 +116,10 @@ public class DockerResource extends ExternalResource {
   }
 
   /**
-   * @return the exposed host where this resource is available, based on the DOCKER_HOST system environment variable
+   * Returns the host where the started Docker container is available. It takes the $DOCKER_HOST environment variable
+   * into account and falls back to 'localhost' if the variable is not specified.
+   *
+   * @return Host where the started Docker container is available
    */
   public String getExposedHost() {
     return DockerTestUtils.getDockerHost();
@@ -163,8 +166,8 @@ public class DockerResource extends ExternalResource {
    *
    * @return Builder object
    */
-  public static Builder builder() {
-    return new Builder();
+  public static <T extends Builder<?>> Builder<T> builder() {
+    return new Builder<>();
   }
 
   /**
@@ -291,8 +294,8 @@ public class DockerResource extends ExternalResource {
   }
 
   private boolean useProxySettings() {
-    //allow user to turn of proxy autodetection by setting this property using a system property
-    return !Boolean.valueOf(ifNull(System.getProperty("DockerResource.disable.proxy"), "false"));
+    // Allow user to turn off proxy autodetection by setting this property using a system property.
+    return !Boolean.parseBoolean(ifNull(System.getProperty("DockerResource.disable.proxy"), "false"));
   }
 
   private void initializeDockerClient() {
@@ -312,12 +315,12 @@ public class DockerResource extends ExternalResource {
     PortBinding portBinding = StringUtils.isBlank(exposedPortsRange) ? PortBinding.randomPort("0.0.0.0") :
             PortBinding.of("0.0.0.0", exposedPortsRange);
 
-    // Bind ports on the host to the application ports of the container randomly or with configured range
+    // Bind ports on the host to the application ports of the container randomly or with configured range.
     // Also apply any additional host configuration by calling additionalHostConfig().
     HostConfig hostConfig = additionalHostConfig(HostConfig.builder()
             .portBindings(map(applicationPorts, port -> T(port, list(portBinding))))
             .build());
-    // Convert provided environmental variables to appropriate docker format
+    // Convert provided environmental variables to appropriate docker format.
     List<String> env = environmentVariables.entrySet()
             .stream()
             .map(e -> String.format("%s=%s", e.getKey(), e.getValue()))
@@ -365,7 +368,7 @@ public class DockerResource extends ExternalResource {
    * constructor of a subclass. This constructor in turn should pass them to the constructor}.
    * See {@link CassandraDockerResource.Builder} as an example.
    */
-  public static class Builder<T extends Builder> {
+  public static class Builder<T extends Builder<?>> {
     protected String imageName;
     protected Set<Integer> applicationPorts;
     protected String exposedPortsRange;
@@ -396,7 +399,9 @@ public class DockerResource extends ExternalResource {
 
     /**
      * Set application ports which will be used inside the container and exposed outside of the container by mapping to
-     * {@link #setExposedPortsRange(String)} or random ports. Also see {@link #getExposedHostPort(int)} for more information.
+     * ports inside the range specified with {@link #setExposedPortsRange(String)} or random ports.
+     * <p>
+     * Also see {@link #getExposedHostPort(int)} for more information.
      *
      * @param applicationPorts Set of application ports
      * @return Builder
@@ -408,7 +413,9 @@ public class DockerResource extends ExternalResource {
 
     /**
      * Add a single application port which will be used inside the container and exposed outside of the container by
-     * mapping to a random port. Also see {@link #getExposedHostPort(int)} for more information.
+     * mapping to a port inside the range specified with {@link #setExposedPortsRange(String)} or a random port.
+     * <p>
+     * Also see {@link #getExposedHostPort(int)} for more information.
      *
      * @param applicationPort Single application port
      * @return Builder
@@ -431,6 +438,7 @@ public class DockerResource extends ExternalResource {
 
     /**
      * Set timeout in seconds until test for container reachability stops. Defaults to 30 seconds if not set.
+     * <p>
      * Also see {@link #isContainerReachable()} for more information.
      *
      * @param reachabilityTimeout Timeout in seconds
@@ -454,7 +462,7 @@ public class DockerResource extends ExternalResource {
     }
 
     /**
-     * Set environment variables for container
+     * Set multiple environment variables for the container.
      *
      * @param variables Array of key-value pairs
      * @return Builder
@@ -465,14 +473,14 @@ public class DockerResource extends ExternalResource {
     }
 
     /**
-     * Add environment variable for container
+     * Add an additional environment variable for the container.
      *
      * @param key   Variable name
      * @param value Variable value
      * @return Builder
      */
     public T addEnvironmentVariable(String key, String value) {
-      this.environmentVariables.put(key, value);
+      this.environmentVariables = MapUtils.addToMap(this.environmentVariables, key, value);
       return (T) this;
     }
   }

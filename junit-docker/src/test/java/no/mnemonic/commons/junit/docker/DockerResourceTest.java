@@ -1,24 +1,21 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ContainerInfo;
-import com.spotify.docker.client.messages.NetworkSettings;
-import com.spotify.docker.client.messages.PortBinding;
-import com.spotify.docker.client.shaded.com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 import org.junit.Test;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.exceptions.DockerException;
+import org.mandas.docker.client.messages.ContainerCreation;
+import org.mandas.docker.client.messages.ContainerInfo;
+import org.mandas.docker.client.messages.NetworkSettings;
+import org.mandas.docker.client.messages.PortBinding;
 import org.mockito.Mock;
 
-import java.util.List;
+import java.util.Collections;
 
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -37,8 +34,8 @@ public class DockerResourceTest {
     resource = DockerResource.builder()
             .setDockerClientResolver(() -> dockerClient)
             .setImageName("busybox")
-            .addEnvironmentVariable("key1","value1")
-            .addEnvironmentVariable("key2","value2")
+            .addEnvironmentVariable("key1", "value1")
+            .addEnvironmentVariable("key2", "value2")
             .addApplicationPort(8080)
             .build();
   }
@@ -178,9 +175,7 @@ public class DockerResourceTest {
   private void mockInspectContainer() throws Exception {
     NetworkSettings networkSettings = mock(NetworkSettings.class);
     ContainerInfo containerInfo = mock(ContainerInfo.class);
-    when(networkSettings.ports()).thenReturn(ImmutableMap.<String, List<PortBinding>>builder()
-            .put("8080/tcp", list(PortBinding.of("0.0.0.0", "33333")))
-            .build());
+    when(networkSettings.ports()).thenReturn(Collections.singletonMap("8080/tcp", list(PortBinding.of("0.0.0.0", "33333"))));
     when(containerInfo.networkSettings()).thenReturn(networkSettings);
     when(dockerClient.inspectContainer(any())).thenReturn(containerInfo);
   }

@@ -1,20 +1,21 @@
 package no.mnemonic.commons.junit.docker;
 
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.LogStream;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.ExecCreation;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.LogStream;
+import org.mandas.docker.client.exceptions.DockerException;
+import org.mandas.docker.client.messages.ContainerCreation;
+import org.mandas.docker.client.messages.ExecCreation;
 import org.mockito.Mock;
 
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -24,12 +25,11 @@ public class MariaDBDockerResourceTest {
   private static final String MYSQLD_IS_ALIVE = "mysqld is alive\n";
   private static final String COULD_NOT_EXECUTE_SQL_SCRIPT = "Could not execute SQL script";
 
-  @Rule
-  public ExpectedException exception = ExpectedException.none();
   @Mock
   private DockerClient dockerClient;
 
   private MariaDBDockerResource resource;
+  private MariaDBDockerResource resourceWithoutScripts;
 
   @Before
   public void setUp() throws Exception {
@@ -44,6 +44,46 @@ public class MariaDBDockerResourceTest {
             .setReachabilityTimeout(1)
             .addApplicationPort(3306)
             .build();
+
+    resourceWithoutScripts = MariaDBDockerResource.builder()
+            .setDockerClientResolver(() -> dockerClient)
+            .setImageName("mariadb:10.0")
+            .setReachabilityTimeout(1)
+            .addApplicationPort(3306)
+            .build();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testBuildFailsOnMissingSetupScript() {
+    MariaDBDockerResource.builder()
+            .setImageName("mariadb:10.0")
+            .setSetupScript("notExist.cql")
+            .build();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void testBuildFailsOnMissingTruncateScript() {
+    MariaDBDockerResource.builder()
+            .setImageName("mariadb:10.0")
+            .setTruncateScript("notExist.cql")
+            .build();
+  }
+
+  @Test
+  public void testIsContainerReachableFailsOnExecCreateException() throws Throwable {
+    when(dockerClient.execCreate(any(), any(), any())).thenThrow(DockerException.class);
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not execute 'mysqladmin'"));
+  }
+
+  @Test
+  public void testIsContainerReachableFailsOnExecStartException() throws Throwable {
+    when(dockerClient.execCreate(any(), any(), any())).thenReturn(execCreation("executionID"));
+    when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not execute 'mysqladmin'"));
   }
 
   @Test(expected = TimeoutException.class)
@@ -52,70 +92,103 @@ public class MariaDBDockerResourceTest {
     resource.before();
   }
 
+  @Test
+  public void testPrepareContainerFailsOnCopyToContainerException() throws Throwable {
+    mockTestReachability(MYSQLD_IS_ALIVE);
+    doThrow(DockerException.class).when(dockerClient).copyToContainer(isA(Path.class), any(), any());
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Could not copy files"));
+  }
 
   @Test
   public void testPrepareContainerFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException(COULD_NOT_EXECUTE_SQL_SCRIPT);
     mockTestReachability(MYSQLD_IS_ALIVE);
-    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), (DockerClient.ExecCreateParam[]) any()))
+    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), any()))
             .thenThrow(DockerException.class);
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains(COULD_NOT_EXECUTE_SQL_SCRIPT));
   }
 
   @Test
   public void testPrepareContainerFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException(COULD_NOT_EXECUTE_SQL_SCRIPT);
     mockTestReachability(MYSQLD_IS_ALIVE);
-    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), any()))
+            .thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains(COULD_NOT_EXECUTE_SQL_SCRIPT));
   }
 
   @Test
   public void testPrepareContainerFailsOnExecuteScript() throws Throwable {
-    exception.expect(IllegalStateException.class);
-    exception.expectMessage("Evaluation of SQL script");
     mockTestReachability(MYSQLD_IS_ALIVE);
     mockExecuteScript("setup.sql", "Failure");
-    resource.before();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.before());
+    assertTrue(ex.getMessage().contains("Evaluation of SQL script"));
   }
 
   @Test
   public void testInitializeSuccessful() throws Throwable {
     mockAndExecuteSuccessfulInitialization();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), (DockerClient.ExecCreateParam[]) any());
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), any());
     verify(dockerClient, times(2)).execStart(any());
   }
 
   @Test
+  public void testInitializeSuccessfulWithoutScripts() throws Throwable {
+    mockTestReachability(MYSQLD_IS_ALIVE);
+    resourceWithoutScripts.before();
+
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), any());
+    verify(dockerClient).execStart(any());
+    verify(dockerClient, never()).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
+  }
+
+  @Test
+  public void testInitializeAddsAdditionalConfig() throws Throwable {
+    mockAndExecuteSuccessfulInitialization();
+
+    verify(dockerClient).createContainer(argThat(containerConfig -> {
+      assertTrue(containerConfig.hostConfig().tmpfs().containsKey("/var/lib/mysql"));
+      assertEquals(0, (int) containerConfig.hostConfig().memorySwappiness());
+      return true;
+    }));
+  }
+
+  @Test
   public void testTruncateFailsOnExecCreateException() throws Throwable {
-    expectIllegalStateException(COULD_NOT_EXECUTE_SQL_SCRIPT);
-    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), (DockerClient.ExecCreateParam[]) any()))
+    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), any()))
             .thenThrow(DockerException.class);
     mockAndExecuteSuccessfulInitialization();
-    resource.truncate();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.truncate());
+    assertTrue(ex.getMessage().contains(COULD_NOT_EXECUTE_SQL_SCRIPT));
   }
 
   @Test
   public void testTruncateFailsOnExecStartException() throws Throwable {
-    expectIllegalStateException(COULD_NOT_EXECUTE_SQL_SCRIPT);
-    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create("executionID", null));
+    when(dockerClient.execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), any()))
+            .thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
     mockAndExecuteSuccessfulInitialization();
-    resource.truncate();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.truncate());
+    assertTrue(ex.getMessage().contains(COULD_NOT_EXECUTE_SQL_SCRIPT));
   }
 
   @Test
   public void testTruncateFailsOnExecuteScript() throws Throwable {
-    exception.expect(IllegalStateException.class);
-    exception.expectMessage("Evaluation of SQL script");
     mockExecuteScript("truncate.sql", "Failure");
     mockAndExecuteSuccessfulInitialization();
-    resource.truncate();
+
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> resource.truncate());
+    assertTrue(ex.getMessage().contains("Evaluation of SQL script"));
   }
 
   @Test
@@ -124,10 +197,17 @@ public class MariaDBDockerResourceTest {
     mockAndExecuteSuccessfulInitialization();
     resource.truncate();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), (DockerClient.ExecCreateParam[]) any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), any());
   }
 
-  //helper methods
+  @Test
+  public void testTruncateSuccessfulWithoutScripts() throws Throwable {
+    mockTestReachability(MYSQLD_IS_ALIVE);
+    resourceWithoutScripts.before();
+    resourceWithoutScripts.truncate();
+
+    verify(dockerClient, never()).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), any());
+  }
 
   private void mockAndExecuteSuccessfulInitialization() throws Throwable {
     mockTestReachability(MYSQLD_IS_ALIVE);
@@ -153,16 +233,21 @@ public class MariaDBDockerResourceTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), (DockerClient.ExecCreateParam[]) any()))
-            .thenReturn(ExecCreation.create(executionID, null));
+    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 
-  private void expectIllegalStateException(String phrase) {
-    // Make sure that correct IllegalStateException is thrown and that wrong/missing mocking will be caught.
-    exception.expect(IllegalStateException.class);
-    exception.expectCause(instanceOf(DockerException.class));
-    exception.expectMessage(phrase);
-  }
+  private ExecCreation execCreation(String executionID) {
+    return new ExecCreation() {
+      @Override
+      public String id() {
+        return executionID;
+      }
 
+      @Override
+      public List<String> warnings() {
+        return Collections.emptyList();
+      }
+    };
+  }
 }
