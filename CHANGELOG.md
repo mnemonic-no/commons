@@ -3,6 +3,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.0] - 2020-04-23
+### Added
+ARGUS-17574
+- Added jupiter-docker module as a port of junit-docker to JUnit 5, i.e. implementing DockerResource (and subclasses) as JUnit 5 extensions.
+- DockerExtension (and subclasses) no longer expose methods to manually truncate data. Instead, all extensions now perform
+truncation automatically after each test using @AfterEach semantics.
+
+Upgrade notes:
+- Instead of using @ClassRule register the new extensions using @RegisterExtension.
+- Remove manual truncation of data with truncate() or deleteIndices() (these methods have been removed).
+- ElasticSearchDockerExtension no longer deletes all indices by default. Specify "_all" when registering the extension instead.
+
+## [0.3.6] - 2020-04-21
+### Changed
+ARGUS-17574
+- Switched to a maintained fork of Spotify's docker-client (org.mandas:docker-client).
+
+## [0.3.5] - 2020-03-10
+### Changed
+ARGUS-17415
+- Increased default offset range in AvailablePortFinder and added method to allow specifying a custom offset range.
+
+## [0.3.4] - 2020-02-14
+### Changed
+ARGUS-17074
+- Upgrade JUnit from 4.12 to 4.13.
+- Upgrade Log4j from 2.12.1 to 2.13.0.
+- Upgrade Mockito from 3.0.0 to 3.2.4.
+- Upgrade Spring from 5.1.9.RELEASE to 5.2.3.RELEASE.
+
 ## [0.3.3] - 2019-09-10
 ### Changed
 ARGUS-14772
