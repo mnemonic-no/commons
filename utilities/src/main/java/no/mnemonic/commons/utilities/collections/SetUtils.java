@@ -1,8 +1,16 @@
 package no.mnemonic.commons.utilities.collections;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class SetUtils {
 
@@ -19,7 +27,7 @@ public class SetUtils {
   @SafeVarargs
   public static <T> Set<T> set(T... values) {
     if (values == null) return new HashSet<>();
-    return new HashSet<>(Arrays.asList(values));
+    return set(Arrays.asList(values));
   }
 
   /**
@@ -38,11 +46,11 @@ public class SetUtils {
    *
    * @param collection A collection which values are added to the set.
    * @param <T>        Type of collection values.
-   * @return A set containing all values contained in the given collection.
+   * @return A set containing all values contained in the given collection, omitting null elements.
    */
   public static <T> Set<T> set(Collection<T> collection) {
     if (collection == null) return new HashSet<>();
-    return new HashSet<>(collection);
+    return collection.stream().filter(Objects::nonNull).collect(Collectors.toSet());
   }
 
   /**
@@ -56,7 +64,7 @@ public class SetUtils {
    */
   @SafeVarargs
   public static <T, V> Set<V> set(Function<T, V> mapping, T... values) {
-    if (values == null) return new HashSet<>();
+    if (values == null) return set();
     return set(Arrays.asList(values), mapping);
   }
 
@@ -71,10 +79,12 @@ public class SetUtils {
    */
   public static <T, V> Set<V> set(Iterator<T> iterator, Function<T, V> mapping) {
     if (mapping == null) throw new IllegalArgumentException("Mapping function not set!");
-    if (iterator == null) return new HashSet<>();
-    Set<V> result = new HashSet<>();
-    iterator.forEachRemaining(o -> result.add(mapping.apply(o)));
-    return result;
+    if (iterator == null) return set();
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false)
+            .filter(Objects::nonNull)
+            .map(mapping)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
   }
 
   /**
@@ -84,12 +94,16 @@ public class SetUtils {
    * @param mapping    A mapping function applied to all values.
    * @param <T>        Type of collection values before conversion.
    * @param <V>        Type of values in the returned set after conversion.
-   * @return A set containing all values contained in the given collection and converted using the mapping function.
+   * @return A set containing all values contained in the given collection and converted using the mapping function, omitting null elements.
    */
   public static <T, V> Set<V> set(Collection<T> collection, Function<T, V> mapping) {
     if (mapping == null) throw new IllegalArgumentException("Mapping function not set!");
-    if (collection == null) return new HashSet<>();
-    return collection.stream().map(mapping).collect(Collectors.toSet());
+    if (collection == null) return set();
+    return collection.stream()
+            .filter(Objects::nonNull)
+            .map(mapping)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
   }
 
   /**
@@ -103,7 +117,7 @@ public class SetUtils {
    * @return Set including added element.
    */
   public static <T> Set<T> addToSet(Set<T> set, T element) {
-    if (set == null) set = new HashSet<>();
+    if (set == null) set = set();
     if (element == null) return set;
     set.add(element);
     return set;
@@ -139,7 +153,7 @@ public class SetUtils {
    */
   @SafeVarargs
   public static <T> Set<T> intersection(Set<T>... sets) {
-    if (sets == null) return new HashSet<>();
+    if (sets == null) return set();
     Set<T> result = set(sets[0]);
     for (int i = 1; i < sets.length; i++) {
       result = intersectTwoSets(result, sets[i]);
@@ -170,8 +184,8 @@ public class SetUtils {
    */
   @SafeVarargs
   public static <T> Set<T> union(Set<T>... sets) {
-    if (sets == null) return new HashSet<>();
-    Set<T> result = new HashSet<>();
+    if (sets == null) return set();
+    Set<T> result = set();
     for (Set<T> s : sets) {
       if (s != null) result.addAll(s);
     }
@@ -197,7 +211,7 @@ public class SetUtils {
   }
 
   private static <T> Set<T> intersectTwoSets(Set<T> a, Set<T> b) {
-    if (a == null || b == null) return new HashSet<>();
+    if (a == null || b == null) return set();
     Set<T> result = new HashSet<>(a);
     result.retainAll(b);
     return result;

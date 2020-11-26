@@ -18,6 +18,26 @@ public class ListUtilsTest {
   }
 
   @Test
+  public void testListOmitsEmptyElements() {
+    List<Integer> expected = new ArrayList<>(Arrays.asList(1, 2, 3));
+
+    assertEquals(expected, ListUtils.list(Arrays.asList(1, 2, null, 3)));
+    assertEquals(expected, ListUtils.list(new ArrayList<>(Arrays.asList(1, 2, null, 3))));
+    assertEquals(expected, ListUtils.list(ListUtils.list(1, 2, null, 3)));
+  }
+
+  @Test
+  public void testListWithMappingOmitsEmptyElements() {
+    List<Long> expected = new ArrayList<>(Arrays.asList(1L, 2L, 3L));
+
+    assertEquals(expected, ListUtils.list(Arrays.asList(1, 2, null, 3), Long::valueOf));
+    assertEquals(expected, ListUtils.list(new ArrayList<>(Arrays.asList(1, 2, null, 3)), Long::valueOf));
+    assertEquals(expected, ListUtils.list(ListUtils.list(1, 2, null, 3), Long::valueOf));
+
+    assertEquals(ListUtils.list(), ListUtils.list(ListUtils.list(1, 2, null, 3), l->null));
+  }
+
+  @Test
   public void testListWithNullInputReturnsEmptyList() {
     List<Integer> expected = new ArrayList<>();
 

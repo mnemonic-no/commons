@@ -27,6 +27,32 @@ public class SetUtilsTest {
   }
 
   @Test
+  public void testSetOmitsEmptyElements() {
+    Set<Integer> expected = new HashSet<>(Arrays.asList(1, 2, 3));
+
+    assertEquals(expected, SetUtils.set(Arrays.asList(1, 2, null, 3)));
+    assertEquals(expected, SetUtils.set(new HashSet<>(Arrays.asList(1, 2, null, 3))));
+    assertEquals(expected, SetUtils.set(ListUtils.list(1, 2, null, 3)));
+
+    assertEquals(expected, SetUtils.set(Arrays.asList(1, 2, null, 3).iterator()));
+    assertEquals(expected, SetUtils.set(new HashSet<>(Arrays.asList(1, 2, null, 3))));
+    assertEquals(expected, SetUtils.set(ListUtils.list(1, 2, null, 3)));
+  }
+
+  @Test
+  public void testSetWithMappingOmitsEmptyElements() {
+    Set<Long> expected = new HashSet<>(Arrays.asList(1L, 2L, 3L));
+
+    assertEquals(expected, SetUtils.set(Arrays.asList(1, 2, null, 3), Long::valueOf));
+    assertEquals(expected, SetUtils.set(new HashSet<>(Arrays.asList(1, 2, null, 3)), Long::valueOf));
+    assertEquals(expected, SetUtils.set(ListUtils.list(1, 2, null, 3), Long::valueOf));
+
+    assertEquals(SetUtils.set(), SetUtils.set(Arrays.asList(1, 2, null, 3), i->null));
+    assertEquals(SetUtils.set(), SetUtils.set(ListUtils.list(1, 2, null, 3), i->null));
+    assertEquals(SetUtils.set(), SetUtils.set(ListUtils.list(1, 2, null, 3).iterator(), i->null));
+  }
+
+  @Test
   public void testSetWithMappingReturnsNewSet() {
     Set<String> expected = new HashSet<>(Arrays.asList("1", "2", "3"));
 

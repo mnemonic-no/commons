@@ -1,8 +1,16 @@
 package no.mnemonic.commons.utilities.collections;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class ListUtils {
 
@@ -19,7 +27,7 @@ public class ListUtils {
   @SafeVarargs
   public static <T> List<T> list(T... values) {
     if (values == null) return new ArrayList<>();
-    return new ArrayList<>(Arrays.asList(values));
+    return list(Arrays.asList(values));
   }
 
   /**
@@ -38,11 +46,11 @@ public class ListUtils {
    *
    * @param collection A collection which values are added to the list.
    * @param <T>        Type of collection values.
-   * @return A list containing all values contained in the given collection.
+   * @return A list containing all values contained in the given collection, omitting null elements.
    */
   public static <T> List<T> list(Collection<T> collection) {
     if (collection == null) return new ArrayList<>();
-    return new ArrayList<>(collection);
+    return collection.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
   /**
@@ -56,7 +64,7 @@ public class ListUtils {
    */
   @SafeVarargs
   public static <T, V> List<V> list(Function<T, V> mapping, T... values) {
-    if (values == null) return new ArrayList<>();
+    if (values == null) return list();
     return list(Arrays.asList(values), mapping);
   }
 
@@ -71,10 +79,12 @@ public class ListUtils {
    */
   public static <T, V> List<V> list(Iterator<T> iterator, Function<T, V> mapping) {
     if (mapping == null) throw new IllegalArgumentException("Mapping function not set!");
-    if (iterator == null) return new ArrayList<>();
-    List<V> result = new ArrayList<>();
-    iterator.forEachRemaining(o -> result.add(mapping.apply(o)));
-    return result;
+    if (iterator == null) return list();
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false)
+            .filter(Objects::nonNull)
+            .map(mapping)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
   }
 
   /**
@@ -84,12 +94,16 @@ public class ListUtils {
    * @param mapping    A mapping function applied to all values.
    * @param <T>        Type of collection values before conversion.
    * @param <V>        Type of values in the returned list after conversion.
-   * @return A list containing all values contained in the given collection and converted using the mapping function.
+   * @return A list containing all values contained in the given collection and converted using the mapping function, omitting null elements.
    */
   public static <T, V> List<V> list(Collection<T> collection, Function<T, V> mapping) {
     if (mapping == null) throw new IllegalArgumentException("Mapping function not set!");
-    if (collection == null) return new ArrayList<>();
-    return collection.stream().map(mapping).collect(Collectors.toList());
+    if (collection == null) return list();
+    return collection.stream()
+            .filter(Objects::nonNull)
+            .map(mapping)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
   }
 
   /**
@@ -103,7 +117,7 @@ public class ListUtils {
    * @return List including added element.
    */
   public static <T> List<T> addToList(List<T> list, T element) {
-    if (list == null) list = new ArrayList<>();
+    if (list == null) list = list();
     if (element == null) return list;
     list.add(element);
     return list;
@@ -118,8 +132,8 @@ public class ListUtils {
    */
   @SafeVarargs
   public static <T> List<T> concatenate(List<T>... lists) {
-    if (lists == null) return new ArrayList<>();
-    List<T> result = new ArrayList<>();
+    if (lists == null) return list();
+    List<T> result = list();
     for (List<T> l : lists) {
       if (l != null) result.addAll(l);
     }
