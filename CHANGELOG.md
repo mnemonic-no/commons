@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.2] - 2020-12-15
+### Changed
+ARGUS-20874
+- Upgraded all dependencies to the newest versions.
+- Force upgraded httpclient and smallrye-config to fix vulnerabilities from transitive dependencies.
+- Use RESTEasy as JAX-RS client instead of Jersey for docker-client.
+
+## [0.4.1] - 2020-11-27
+### Changed
+ARGUS-18834
+- ListUtils.list() and SetUtils.set() will omit any empty elements in the input array/collection.
+
 ## [0.4.0] - 2020-04-23
 ### Added
 ARGUS-17574

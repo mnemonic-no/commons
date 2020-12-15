@@ -22,16 +22,37 @@
       <groupId>org.mandas</groupId>
       <artifactId>docker-client</artifactId>
       <version>${docker.client.version}</version>
-      <classifier>shaded</classifier>
     </dependency>
-    <!--
-        docker-client removed its dependency on javax.activation but without it Jersey throws a ClassNotFoundException.
-        Temporarily add it back until this is fixed upstream (https://github.com/dmandalidis/docker-client/issues/172).
-    -->
+    <!-- Use RESTEasy as a JAX-RS client. Requires Jackson as well. -->
     <dependency>
-      <groupId>javax.activation</groupId>
-      <artifactId>activation</artifactId>
-      <version>${javax.activation.version}</version>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-client</artifactId>
+      <version>${resteasy.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-core</artifactId>
+      <version>${resteasy.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- Force newer versions of httpclient and smallrye until RESTEasy has upgraded its dependencies. -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${httpclient.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.config</groupId>
+      <artifactId>smallrye-config</artifactId>
+      <version>${smallrye.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.jaxrs</groupId>
+      <artifactId>jackson-jaxrs-json-provider</artifactId>
+      <version>${jackson.version}</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>

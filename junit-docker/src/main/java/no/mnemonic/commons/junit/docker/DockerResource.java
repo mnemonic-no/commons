@@ -7,8 +7,8 @@ import no.mnemonic.commons.utilities.collections.MapUtils;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 import no.mnemonic.commons.utilities.lambda.LambdaUtils;
 import org.junit.rules.ExternalResource;
-import org.mandas.docker.client.DefaultDockerClient;
 import org.mandas.docker.client.DockerClient;
+import org.mandas.docker.client.builder.resteasy.ResteasyDockerClientBuilder;
 import org.mandas.docker.client.messages.ContainerConfig;
 import org.mandas.docker.client.messages.ContainerInfo;
 import org.mandas.docker.client.messages.HostConfig;
@@ -277,13 +277,13 @@ public class DockerResource extends ExternalResource {
     try {
       if (!StringUtils.isBlank(System.getenv(DOCKER_HOST_ENVIRONMENT_VARIABLE))) {
         // If DOCKER_HOST is set create docker client from environment variables.
-        return DefaultDockerClient
+        return new ResteasyDockerClientBuilder()
                 .fromEnv()
                 .useProxy(useProxySettings())
                 .build();
       } else {
         // Otherwise connect to localhost on the default daemon port.
-        return DefaultDockerClient.builder()
+        return new ResteasyDockerClientBuilder()
                 .uri(String.format("http://localhost:%d", DEFAULT_DOCKER_DAEMON_PORT))
                 .useProxy(useProxySettings())
                 .build();
