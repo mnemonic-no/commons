@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.3] - 2021-02-24
+### Added
+ARGUS-22023
+- Added function for subtracting one set from the other: SetUtils.difference
+
 ## [0.4.2] - 2020-12-15
 ### Changed
 ARGUS-20874

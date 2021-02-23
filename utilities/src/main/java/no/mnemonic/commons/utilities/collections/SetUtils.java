@@ -210,6 +210,21 @@ public class SetUtils {
     return originSet;
   }
 
+  /**
+   * Subtracts every item from @param a that is also present in @param b.
+   * Items present in @param b, but not in @param a are ignored.
+   * @param a The set to subtract items from
+   * @param b The set to compare with
+   * @param <T> The type of values
+   * @return A new set containing every item in @param a that is not present in @param b.
+   */
+  public static <T> Set<T> difference(Set<T> a, Set<T> b) {
+    Set<T> result = set(a);
+    if (a == null || b == null) return result;
+    result.removeIf(b::contains);
+    return result;
+  }
+
   private static <T> Set<T> intersectTwoSets(Set<T> a, Set<T> b) {
     if (a == null || b == null) return set();
     Set<T> result = new HashSet<>(a);

@@ -160,4 +160,17 @@ public class SetUtilsTest {
     assertSame(originSet, SetUtils.modifySet(originSet, Collections.singleton(3), Collections.singleton(1)));
   }
 
+  @Test
+  public void testDifference() {
+    assertEquals(new HashSet<>(Arrays.asList(1, 2)), SetUtils.difference(new HashSet<>(Arrays.asList(1, 2, 3)), new HashSet<>(Arrays.asList(3, 4, 5))));
+    assertEquals(new HashSet<>(Arrays.asList(1, 2, 3)), SetUtils.difference(new HashSet<>(Arrays.asList(1, 2, 3)), new HashSet<>(Arrays.asList(4, 5, 6))));
+    assertEquals(new HashSet<>(Collections.singletonList(1)), SetUtils.difference(new HashSet<>(Arrays.asList(1, 2, 3)), new HashSet<>(Arrays.asList(2, 3, 4))));
+    assertEquals(new HashSet<>(Collections.emptyList()), SetUtils.difference(null, new HashSet<>(Arrays.asList(3, 4, 5))));
+    assertEquals(new HashSet<>(Collections.emptyList()), SetUtils.difference(null, null));
+    assertEquals(new HashSet<>(Arrays.asList(1, 2, 3)), SetUtils.difference(new HashSet<>(Arrays.asList(1, 2, 3)), null));
+    assertEquals(new HashSet<>(Collections.emptyList()), SetUtils.difference(new HashSet<>(Arrays.asList(1, 2, 3)), new HashSet<>(Arrays.asList(1, 2, 3))));
+    assertEquals(new HashSet<>(Arrays.asList(1, 2, 3)), SetUtils.difference(new HashSet<>(Arrays.asList(1, 2, 3)), new HashSet<>()));
+    assertEquals(new HashSet<>(Collections.emptyList()), SetUtils.difference(new HashSet<>(), new HashSet<>(Arrays.asList(1, 2, 3))));
+  }
+
 }
