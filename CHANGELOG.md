@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.5] - 2021-04-26
+### Changed
+ARGUS-22965
+- Upgraded Guice to version 5.0.1. The container module supports both version 4.2 and 5.0 of Guice and the dependency is
+declared with the provided scope. Because of that, users can decide which version of Guice to utilize.
+- Upgraded other dependencies to the newest bugfix versions.
+
+## [0.4.4] - 2021-04-19
+### Changed
+ARGUS-22838
+- Upgraded dependencies to the newest versions.
+
 ## [0.4.3] - 2021-02-24
 ### Added
 ARGUS-22023
