@@ -74,6 +74,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   private final Set<String> applicationPorts;
   private final String exposedPortsRange;
   private final int reachabilityTimeout;
+  private final boolean skipReachabilityCheck;
   private final Supplier<DockerClient> dockerClientResolver;
   private final Map<String, String> environmentVariables;
 
@@ -83,21 +84,27 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   /**
    * Constructor to override by subclasses.
    *
-   * @param imageName            Name of Docker image (required)
-   * @param applicationPorts     Application ports available inside the container (at least one is required)
-   * @param exposedPortsRange    Range of ports for mapping to the outside of the container (optional)
-   * @param reachabilityTimeout  Timeout until testing that container is reachable stops (required)
-   * @param dockerClientResolver Function to resolve DockerClient (optional)
-   * @param environmentVariables Container's environment variables (optional)
+   * @param imageName             Name of Docker image (required)
+   * @param applicationPorts      Application ports available inside the container (at least one is required)
+   * @param exposedPortsRange     Range of ports for mapping to the outside of the container (optional)
+   * @param reachabilityTimeout   Timeout until testing that container is reachable stops (optional)
+   * @param skipReachabilityCheck If set skip testing that container is reachable (optional)
+   * @param dockerClientResolver  Function to resolve DockerClient (optional)
+   * @param environmentVariables  Container's environment variables (optional)
    * @throws IllegalArgumentException If one of the required parameters is not provided
    */
-  protected DockerExtension(String imageName, Set<Integer> applicationPorts, String exposedPortsRange,
-                            int reachabilityTimeout, Supplier<DockerClient> dockerClientResolver,
+  protected DockerExtension(String imageName,
+                            Set<Integer> applicationPorts,
+                            String exposedPortsRange,
+                            int reachabilityTimeout,
+                            boolean skipReachabilityCheck,
+                            Supplier<DockerClient> dockerClientResolver,
                             Map<String, String> environmentVariables) {
     if (StringUtils.isBlank(imageName)) throw new IllegalArgumentException("'imageName' not provided!");
     if (CollectionUtils.isEmpty(applicationPorts))
       throw new IllegalArgumentException("'applicationPorts' not provided!");
-    if (reachabilityTimeout <= 0) throw new IllegalArgumentException("'reachabilityTimeout' not provided!");
+    if (!skipReachabilityCheck && reachabilityTimeout <= 0)
+      throw new IllegalArgumentException("'reachabilityTimeout' not provided!");
 
     this.imageName = imageName;
     this.applicationPorts = Collections.unmodifiableSet(applicationPorts.stream()
@@ -106,6 +113,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
             .collect(Collectors.toSet()));
     this.exposedPortsRange = exposedPortsRange;
     this.reachabilityTimeout = reachabilityTimeout;
+    this.skipReachabilityCheck = skipReachabilityCheck;
     this.dockerClientResolver = ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
     this.environmentVariables = Collections.unmodifiableMap(environmentVariables);
 
@@ -372,6 +380,8 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   }
 
   private void testContainerReachability() throws Exception {
+    if (skipReachabilityCheck) return;
+
     if (!LambdaUtils.waitFor(this::isContainerReachable, reachabilityTimeout, TimeUnit.SECONDS)) {
       throw new TimeoutException("Could not connect to container before timeout.");
     }
@@ -390,6 +400,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     protected Set<Integer> applicationPorts;
     protected String exposedPortsRange;
     protected int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT_SECONDS;
+    protected boolean skipReachabilityCheck;
     protected Supplier<DockerClient> dockerClientResolver;
     protected Map<String, String> environmentVariables = new HashMap<>();
 
@@ -400,7 +411,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
      */
     public DockerExtension build() {
       return new DockerExtension(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              dockerClientResolver, environmentVariables);
+              skipReachabilityCheck, dockerClientResolver, environmentVariables);
     }
 
     /**
@@ -463,6 +474,16 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
      */
     public T setReachabilityTimeout(int reachabilityTimeout) {
       this.reachabilityTimeout = reachabilityTimeout;
+      return (T) this;
+    }
+
+    /**
+     * Configure DockerExtension to skip test for container reachability. Useful if application code implements similar functionality.
+     *
+     * @return Builder
+     */
+    public T skipReachabilityCheck() {
+      this.skipReachabilityCheck = true;
       return (T) this;
     }
 

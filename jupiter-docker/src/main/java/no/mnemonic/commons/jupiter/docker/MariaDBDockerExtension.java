@@ -47,10 +47,17 @@ public class MariaDBDockerExtension extends DockerExtension {
   private final Path setupScript;
   private final Path truncateScript;
 
-  private MariaDBDockerExtension(String imageName, Set<Integer> applicationPorts, String exposedPortsRange,
-                                 int reachabilityTimeout, Supplier<DockerClient> dockerClientResolver,
-                                 Map<String, String> environmentVariables, String setupScript, String truncateScript) {
-    super(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout, dockerClientResolver, environmentVariables);
+  private MariaDBDockerExtension(String imageName,
+                                 Set<Integer> applicationPorts,
+                                 String exposedPortsRange,
+                                 int reachabilityTimeout,
+                                 boolean skipReachabilityCheck,
+                                 Supplier<DockerClient> dockerClientResolver,
+                                 Map<String, String> environmentVariables,
+                                 String setupScript,
+                                 String truncateScript) {
+    super(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout, skipReachabilityCheck,
+            dockerClientResolver, environmentVariables);
     // Both parameters are optional.
     this.setupScript = !StringUtils.isBlank(setupScript) ? checkFileExists(setupScript) : null;
     this.truncateScript = !StringUtils.isBlank(truncateScript) ? checkFileExists(truncateScript) : null;
@@ -182,7 +189,7 @@ public class MariaDBDockerExtension extends DockerExtension {
       addEnvironmentVariable("MYSQL_ROOT_PASSWORD", "root");
       addEnvironmentVariable("MYSQL_ROOT_HOST", "%");
       return new MariaDBDockerExtension(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              dockerClientResolver, environmentVariables, setupScript, truncateScript);
+              skipReachabilityCheck, dockerClientResolver, environmentVariables, setupScript, truncateScript);
     }
 
     /**

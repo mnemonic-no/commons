@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.7] - 2021-09-13
+### Added
+ARGUS-24979
+- Added option `skipReachabilityCheck` to `DockerResource` and `DockerExtension` which will avoid the reachability check
+against the running Docker container. Useful in the cases where applications implement their own logic.
+
 ## [0.4.6] - 2021-09-09
 ### Changed
 ARGUS-24906
