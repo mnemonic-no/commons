@@ -4,6 +4,9 @@ import no.mnemonic.commons.logging.Logger;
 import no.mnemonic.commons.logging.Logging;
 import org.junit.Test;
 
+import java.util.IllegalFormatException;
+
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class Log4JLoggingProviderTest {
@@ -22,6 +25,15 @@ public class Log4JLoggingProviderTest {
     Logging.getLogger((Class)null).debug("log");
     Logging.getLogger(getClass()).debug("log");
     Logging.getLogger("myname").debug(null);
+  }
+
+  @Test
+  public void testSkipFormattingOnNoArgs() {
+    Logging.setProvider(new Log4JLoggingProvider());
+    //a string with formatting syntax is treated as a raw string if there are no params
+    Logging.getLogger("myname").debug("unformattedString%s%s");
+    //this should fail because the formatted string requires two params, but we only provide one
+    assertThrows(IllegalFormatException.class, ()->Logging.getLogger("myname").debug("formattedString%s%s", "firstarg"));
   }
 
   @Test

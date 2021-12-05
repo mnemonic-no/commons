@@ -60,14 +60,22 @@ public class ConsoleLoggerImpl implements Logger {
 
   //private methods
 
-  private synchronized void log(Level level, String formattedMessage, Object... args) {
-    if (formattedMessage == null) return;
-    selectStream(level).println(String.format(formattedMessage, args));
+  private synchronized void log(Level level, String message, Object... args) {
+    if (message == null) return;
+    if (args == null || args.length == 0) {
+      selectStream(level).println(message);
+    } else {
+      selectStream(level).println(String.format(message, args));
+    }
   }
 
-  private synchronized void log(Level level, Throwable ex, String formattedMessage, Object... args) {
-    if (formattedMessage == null) return;
-    selectStream(level).println(String.format(formattedMessage, args));
+  private synchronized void log(Level level, Throwable ex, String message, Object... args) {
+    if (message == null) return;
+    if (args == null || args.length == 0) {
+      selectStream(level).println(message);
+    } else {
+      selectStream(level).println(String.format(message, args));
+    }
     if (ex != null) {
       ex.printStackTrace(selectStream(level));
     }
