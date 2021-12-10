@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.9] - 2021-12-10
+### Changed
+ARGUS-26379
+- Upgraded log4j to fix CVE-2021-44228 aka Log4Shell.
+- Upgraded other dependencies to the newest versions.
+
+## [0.4.8] - 2021-12-06
+### Changed
+ARGUS-26251
+- Log message as raw (unformatted) message if there are no string parameters.
+
 ## [0.4.7] - 2021-09-13
 ### Added
 ARGUS-24979

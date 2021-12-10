@@ -2,7 +2,6 @@ package no.mnemonic.commons.container;
 
 import no.mnemonic.commons.component.*;
 import no.mnemonic.commons.container.providers.BeanProvider;
-import no.mnemonic.commons.utilities.collections.MapUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -13,8 +12,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import static no.mnemonic.commons.utilities.collections.MapUtils.*;
-import static org.mockito.Matchers.any;
+import static no.mnemonic.commons.utilities.collections.MapUtils.map;
+import static no.mnemonic.commons.utilities.collections.MapUtils.pair;
 import static org.mockito.Mockito.*;
 
 public class ComponentContainerTest {
