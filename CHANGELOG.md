@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.11] - 2022-01-10
+### Changed
+ARGUS-26745
+- Upgraded log4j to fix CVE-2021-44832 and CVE-2021-45105.
+- Upgraded other dependencies to the newest versions.
+
 ## [0.4.10] - 2021-12-15
 ### Changed
 ARGUS-26379
