@@ -2,6 +2,9 @@ package no.mnemonic.commons.logging;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -71,6 +74,11 @@ public class Logging {
           @Override
           public void clear() {
             // do nothing
+          }
+
+          @Override
+          public Map<String, String> getAll() {
+            return Collections.emptyMap();
           }
 
           @Override

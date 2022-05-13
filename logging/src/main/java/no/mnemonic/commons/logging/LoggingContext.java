@@ -1,11 +1,18 @@
 package no.mnemonic.commons.logging;
 
+import java.util.Map;
+
 public interface LoggingContext extends AutoCloseable {
 
   /**
    * Clears the context
    */
   void clear();
+
+  /**
+   * @return all context variables set in this context in an unmodifiable map
+   */
+  Map<String, String> getAll();
 
   /**
    * Determines whether key exists in the context

@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.12] - 2022-05.12
+### Changed
+ARGUS-28992
+- Exposing all context variables in `LoggingContext.getAll()`
+
 ## [0.4.11] - 2022-01-10
 ### Changed
 ARGUS-26745
