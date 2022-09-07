@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.14] - 2022-08-25
+### Added
+ARGUS-29930
+- Added `SetUtils.ifEmpty(set, defaultValue)` which returns `set(defaultValue)` if the set is empty/null
+
 ## [0.4.13] - 2022-08-25
 ### Added
 ARGUS-29459

@@ -173,4 +173,10 @@ public class SetUtilsTest {
     assertEquals(new HashSet<>(Collections.emptyList()), SetUtils.difference(new HashSet<>(), new HashSet<>(Arrays.asList(1, 2, 3))));
   }
 
+  @Test
+  public void testIfEmpty() {
+    assertEquals(SetUtils.set("a","b","c"), SetUtils.ifEmpty(SetUtils.set("a","b","c"), "dv"));
+    assertEquals(SetUtils.set("dv"), SetUtils.ifEmpty(SetUtils.set(), "dv"));
+    assertEquals(SetUtils.set("dv"), SetUtils.ifEmpty(null, "dv"));
+  }
 }

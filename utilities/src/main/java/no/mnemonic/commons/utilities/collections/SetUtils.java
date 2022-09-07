@@ -225,6 +225,21 @@ public class SetUtils {
     return result;
   }
 
+  /**
+   * Returns the provided set, or a set with the default value if the provided set is empty/null
+   * @param values the values to return
+   * @param defaultValue the default value to return if values is null/empty
+   * @return values if set is not empty, or set(defaultValue) if values is empty or null
+   * @param <T> value type
+   */
+  public static <T> Set<T> ifEmpty(Set<T> values, T defaultValue) {
+    if (CollectionUtils.isEmpty(values)) {
+      return set(defaultValue);
+    }
+    return values;
+  }
+
+
   private static <T> Set<T> intersectTwoSets(Set<T> a, Set<T> b) {
     if (a == null || b == null) return set();
     Set<T> result = new HashSet<>(a);
