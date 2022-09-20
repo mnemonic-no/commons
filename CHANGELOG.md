@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.15] - 2022-09-20
+### Fixed
+ARGUS-30895
+- Fixed an issue in GuiceBeanProvider where beans with generic types were omitted due to duplicated keys.
+- Changed GuiceBeanProvider to throw an IllegalStateException if duplicated keys are detected.
+
 ## [0.4.14] - 2022-08-25
 ### Added
 ARGUS-29930

@@ -8,6 +8,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -100,10 +101,22 @@ public class GuiceBeanProviderTest {
   @Test
   public void testGetBeansMapWithProviderMapping() {
     GuiceBeanProvider provider = new GuiceBeanProvider(new ProviderMappingModule());
-    provider.getBeans().forEach((k,v)-> System.out.println(k+": " + v));
+    provider.getBeans().forEach((k, v) -> System.out.println(k + ": " + v));
     assertEquals(3, provider.getBeans(MyInterface.class).size());
     assertEquals(2, provider.getBeans(MyOtherInterface.class).size());
     assertEquals(2, provider.getBeans(MyOtherClass.class).size());
+  }
+
+  @Test
+  public void testGetBeansMapWithGenericMapping() {
+    GuiceBeanProvider provider = new GuiceBeanProvider(new GenericMappingModule());
+    assertEquals(2, provider.getBeans(Map.class).size());
+  }
+
+  @Test
+  public void testGetBeansMapWithGenericAnnotatedMapping() {
+    GuiceBeanProvider provider = new GuiceBeanProvider(new GenericAnnotatedMappingModule());
+    assertEquals(3, provider.getBeans(Map.class).size());
   }
 
   @Test
@@ -144,7 +157,24 @@ public class GuiceBeanProviderTest {
     assertTrue(m.get("MyOtherInterface-SecondAnnotation") instanceof MyOtherClass);
   }
 
-  public class ExplicitMappingModule extends AbstractModule {
+  @Test
+  public void testKeysWithGenericMapping() {
+    GuiceBeanProvider provider = new GuiceBeanProvider(new GenericMappingModule());
+    Map<String, Map> m = provider.getBeans(Map.class);
+    assertTrue(m.containsKey("Map-String-Long"));
+    assertTrue(m.containsKey("Map-String-Float"));
+  }
+
+  @Test
+  public void testKeysWithGenericAnnotatedMapping() {
+    GuiceBeanProvider provider = new GuiceBeanProvider(new GenericAnnotatedMappingModule());
+    Map<String, Map> m = provider.getBeans(Map.class);
+    assertTrue(m.containsKey("Map-String-Long-FirstAnnotation"));
+    assertTrue(m.containsKey("Map-String-Long-SecondAnnotation"));
+    assertTrue(m.containsKey("Map-String-Float-FirstAnnotation"));
+  }
+
+  public static class ExplicitMappingModule extends AbstractModule {
     @Override
     public void configure() {
       bind(MyInterface.class).to(MyClass.class).in(Singleton.class);
@@ -152,7 +182,7 @@ public class GuiceBeanProviderTest {
     }
   }
 
-  public class AnnotatedMappingModule extends AbstractModule {
+  public static class AnnotatedMappingModule extends AbstractModule {
     @Override
     public void configure() {
       bind(MyInterface.class).annotatedWith(FirstAnnotation.class).to(MyClass.class).in(Singleton.class);
@@ -161,7 +191,7 @@ public class GuiceBeanProviderTest {
     }
   }
 
-  public class ProviderMappingModule extends AbstractModule {
+  public static class ProviderMappingModule extends AbstractModule {
     @Override
     public void configure() {
       bind(MyInterface.class).annotatedWith(FirstAnnotation.class).toProvider(MyProvider.class).in(Singleton.class);
@@ -170,11 +200,41 @@ public class GuiceBeanProviderTest {
     }
   }
 
-  public class ConcreteMappingModule extends AbstractModule {
+  public static class ConcreteMappingModule extends AbstractModule {
     @Override
     public void configure() {
       bind(MyClass.class).in(Singleton.class);
       bind(MyOtherClass.class).in(Singleton.class);
+    }
+  }
+
+  public static class GenericMappingModule extends AbstractModule {
+    @Override
+    protected void configure() {
+      bind(new TypeLiteral<Map<String, Long>>() {})
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
+      bind(new TypeLiteral<Map<String, Float>>() {})
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
+    }
+  }
+
+  public static class GenericAnnotatedMappingModule extends AbstractModule {
+    @Override
+    protected void configure() {
+      bind(new TypeLiteral<Map<String, Long>>() {})
+              .annotatedWith(FirstAnnotation.class)
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
+      bind(new TypeLiteral<Map<String, Float>>() {})
+              .annotatedWith(FirstAnnotation.class)
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
+      bind(new TypeLiteral<Map<String, Long>>() {})
+              .annotatedWith(SecondAnnotation.class)
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
     }
   }
 

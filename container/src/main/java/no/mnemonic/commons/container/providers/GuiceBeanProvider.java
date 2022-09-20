@@ -6,6 +6,8 @@ import com.google.inject.name.Names;
 import com.google.inject.spi.DefaultBindingScopingVisitor;
 import no.mnemonic.commons.utilities.collections.SetUtils;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,16 +38,23 @@ public class GuiceBeanProvider implements BeanProvider{
   @Override
   public <T> Map<String, T> getBeans(Class<T> searchType) {
     Map<String, T> result = new HashMap<>();
-    injector.getAllBindings().values().stream()
-        .forEach(b-> b.acceptScopingVisitor(new DefaultBindingScopingVisitor(){
-          @Override
-          public Object visitScope(Scope scope) {
-            if (scope == Scopes.SINGLETON) {
-              Object obj = b.getProvider().get();
-              if (searchType.isInstance(obj)) {
-                //noinspection unchecked
-                result.put(createKey(b.getKey()), (T) obj);
-              }
+    injector.getAllBindings().values()
+            .forEach(b -> b.acceptScopingVisitor(new DefaultBindingScopingVisitor<Void>() {
+              @Override
+              public Void visitScope(Scope scope) {
+                if (scope == Scopes.SINGLETON) {
+                  Object obj = b.getProvider().get();
+                  if (searchType.isInstance(obj)) {
+                    String key = createKey(b.getKey());
+                    if (result.containsKey(key)) {
+                      // This should usually not happen because it means that the Guice configuration is messed up.
+                      // Throw an exception instead of silently omitting beans.
+                      throw new IllegalStateException("Already resolved bean with key: " + key);
+                    }
+
+                    //noinspection unchecked
+                    result.put(key, (T) obj);
+                  }
             }
             return null;
           }
@@ -62,9 +71,24 @@ public class GuiceBeanProvider implements BeanProvider{
     return getBeans(Object.class);
   }
 
-  private String createKey(Key nameKey) {
+  private String createKey(Key<?> nameKey) {
     String result = nameKey.getTypeLiteral().getRawType().getSimpleName();
-    if (nameKey.getAnnotationType() != null) result = result + "-" + nameKey.getAnnotationType().getSimpleName();
+
+    // Handle generic type information (optional).
+    if (nameKey.getTypeLiteral().getType() instanceof ParameterizedType) {
+      Type[] typeArguments = ((ParameterizedType) nameKey.getTypeLiteral().getType()).getActualTypeArguments();
+      if (typeArguments.length > 0) {
+        result = result + Arrays.stream(typeArguments)
+                .map(type -> ((Class<?>) type).getSimpleName())
+                .collect(Collectors.joining("-", "-", ""));
+      }
+    }
+
+    // Handle annotation qualifier (optional).
+    if (nameKey.getAnnotationType() != null) {
+      result = result + "-" + nameKey.getAnnotationType().getSimpleName();
+    }
+
     return result;
   }
 
