@@ -8,10 +8,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -110,13 +107,13 @@ public class GuiceBeanProviderTest {
   @Test
   public void testGetBeansMapWithGenericMapping() {
     GuiceBeanProvider provider = new GuiceBeanProvider(new GenericMappingModule());
-    assertEquals(2, provider.getBeans(Map.class).size());
+    assertEquals(3, provider.getBeans(Map.class).size());
   }
 
   @Test
   public void testGetBeansMapWithGenericAnnotatedMapping() {
     GuiceBeanProvider provider = new GuiceBeanProvider(new GenericAnnotatedMappingModule());
-    assertEquals(3, provider.getBeans(Map.class).size());
+    assertEquals(4, provider.getBeans(Map.class).size());
   }
 
   @Test
@@ -163,6 +160,7 @@ public class GuiceBeanProviderTest {
     Map<String, Map> m = provider.getBeans(Map.class);
     assertTrue(m.containsKey("Map-String-Long"));
     assertTrue(m.containsKey("Map-String-Float"));
+    assertTrue(m.containsKey("Map-String-List-String"));
   }
 
   @Test
@@ -172,6 +170,7 @@ public class GuiceBeanProviderTest {
     assertTrue(m.containsKey("Map-String-Long-FirstAnnotation"));
     assertTrue(m.containsKey("Map-String-Long-SecondAnnotation"));
     assertTrue(m.containsKey("Map-String-Float-FirstAnnotation"));
+    assertTrue(m.containsKey("Map-String-List-String-SecondAnnotation"));
   }
 
   public static class ExplicitMappingModule extends AbstractModule {
@@ -217,6 +216,9 @@ public class GuiceBeanProviderTest {
       bind(new TypeLiteral<Map<String, Float>>() {})
               .toProvider(HashMap::new)
               .in(Singleton.class);
+      bind(new TypeLiteral<Map<String, List<String>>>() {})
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
     }
   }
 
@@ -232,6 +234,10 @@ public class GuiceBeanProviderTest {
               .toProvider(HashMap::new)
               .in(Singleton.class);
       bind(new TypeLiteral<Map<String, Long>>() {})
+              .annotatedWith(SecondAnnotation.class)
+              .toProvider(HashMap::new)
+              .in(Singleton.class);
+      bind(new TypeLiteral<Map<String, List<String>>>() {})
               .annotatedWith(SecondAnnotation.class)
               .toProvider(HashMap::new)
               .in(Singleton.class);

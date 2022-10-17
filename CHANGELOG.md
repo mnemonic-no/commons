@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.16] - 2022-10-13
+### Fixed
+ARGUS-31350
+- Fixed ClassCastException in GuiceBeanProvider for beans with recursive generic types, such as `Map<String, List<String>>`.
+
 ## [0.4.15] - 2022-09-20
 ### Fixed
 ARGUS-30895

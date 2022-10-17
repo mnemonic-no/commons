@@ -72,17 +72,7 @@ public class GuiceBeanProvider implements BeanProvider{
   }
 
   private String createKey(Key<?> nameKey) {
-    String result = nameKey.getTypeLiteral().getRawType().getSimpleName();
-
-    // Handle generic type information (optional).
-    if (nameKey.getTypeLiteral().getType() instanceof ParameterizedType) {
-      Type[] typeArguments = ((ParameterizedType) nameKey.getTypeLiteral().getType()).getActualTypeArguments();
-      if (typeArguments.length > 0) {
-        result = result + Arrays.stream(typeArguments)
-                .map(type -> ((Class<?>) type).getSimpleName())
-                .collect(Collectors.joining("-", "-", ""));
-      }
-    }
+    String result = createKeyFromType(nameKey.getTypeLiteral().getType());
 
     // Handle annotation qualifier (optional).
     if (nameKey.getAnnotationType() != null) {
@@ -90,6 +80,28 @@ public class GuiceBeanProvider implements BeanProvider{
     }
 
     return result;
+  }
+
+  private String createKeyFromType(Type type) {
+    // Case 1: Concrete class
+    if (type instanceof Class) {
+      return ((Class<?>) type).getSimpleName();
+    }
+
+    // Case 2: Generic type
+    if (type instanceof ParameterizedType) {
+      ParameterizedType parameterizedType = (ParameterizedType) type;
+      // Handle raw type of the generic, such as Map, List, Set, etc.
+      String prefix = parameterizedType.getRawType() instanceof Class ?
+              ((Class<?>) parameterizedType.getRawType()).getSimpleName() : "UNKNOWN";
+      // Handle type arguments of the generic.
+      return Arrays.stream(parameterizedType.getActualTypeArguments())
+              .map(this::createKeyFromType)
+              .collect(Collectors.joining("-", prefix + "-", ""));
+    }
+
+    // Fallback for unhandled cases.
+    return "UNKNOWN";
   }
 
   private Module createPropertiesModule(Properties properties) {
