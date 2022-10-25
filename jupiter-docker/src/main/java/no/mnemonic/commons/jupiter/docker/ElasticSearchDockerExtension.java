@@ -45,11 +45,12 @@ public class ElasticSearchDockerExtension extends DockerExtension {
                                        String exposedPortsRange,
                                        int reachabilityTimeout,
                                        boolean skipReachabilityCheck,
+                                       boolean skipPullDockerImage,
                                        Supplier<DockerClient> dockerClientResolver,
                                        Set<String> deleteIndices,
                                        Map<String, String> environmentVariables) {
     super(imageName, applicationPort, exposedPortsRange, reachabilityTimeout, skipReachabilityCheck,
-            dockerClientResolver, environmentVariables);
+            skipPullDockerImage, dockerClientResolver, environmentVariables);
 
     // The 'deleteIndices' parameter is optional.
     this.deleteIndices = ObjectUtils.ifNotNull(deleteIndices, Collections::unmodifiableSet, Collections.emptySet());
@@ -138,7 +139,7 @@ public class ElasticSearchDockerExtension extends DockerExtension {
     @Override
     public ElasticSearchDockerExtension build() {
       return new ElasticSearchDockerExtension(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              skipReachabilityCheck, dockerClientResolver, deleteIndices, environmentVariables);
+              skipReachabilityCheck, skipPullDockerImage, dockerClientResolver, deleteIndices, environmentVariables);
     }
 
     /**

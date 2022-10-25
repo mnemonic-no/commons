@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.17] - 2022-10-25
+### Changed
+ARGUS-28077
+- DockerExtension and DockerResource will now pull docker images by default
+  -  This behavior can be turned off by setting setSkipPullDockerImage(true)
+
 ## [0.4.16] - 2022-10-13
 ### Fixed
 ARGUS-31350

@@ -52,12 +52,13 @@ public class MariaDBDockerExtension extends DockerExtension {
                                  String exposedPortsRange,
                                  int reachabilityTimeout,
                                  boolean skipReachabilityCheck,
+                                 boolean skipPullDockerImage,
                                  Supplier<DockerClient> dockerClientResolver,
                                  Map<String, String> environmentVariables,
                                  String setupScript,
                                  String truncateScript) {
     super(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout, skipReachabilityCheck,
-            dockerClientResolver, environmentVariables);
+            skipPullDockerImage, dockerClientResolver, environmentVariables);
     // Both parameters are optional.
     this.setupScript = !StringUtils.isBlank(setupScript) ? checkFileExists(setupScript) : null;
     this.truncateScript = !StringUtils.isBlank(truncateScript) ? checkFileExists(truncateScript) : null;
@@ -189,7 +190,7 @@ public class MariaDBDockerExtension extends DockerExtension {
       addEnvironmentVariable("MYSQL_ROOT_PASSWORD", "root");
       addEnvironmentVariable("MYSQL_ROOT_HOST", "%");
       return new MariaDBDockerExtension(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              skipReachabilityCheck, dockerClientResolver, environmentVariables, setupScript, truncateScript);
+              skipReachabilityCheck, skipPullDockerImage, dockerClientResolver, environmentVariables, setupScript, truncateScript);
     }
 
     /**

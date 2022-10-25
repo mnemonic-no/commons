@@ -22,6 +22,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 public class DockerResourceTest {
 
+  public static final String IMAGE_NAME = "busybox";
   @Mock
   private DockerClient dockerClient;
 
@@ -33,7 +34,7 @@ public class DockerResourceTest {
 
     resource = DockerResource.builder()
             .setDockerClientResolver(() -> dockerClient)
-            .setImageName("busybox")
+            .setImageName(IMAGE_NAME)
             .addEnvironmentVariable("key1", "value1")
             .addEnvironmentVariable("key2", "value2")
             .addApplicationPort(8080)
@@ -51,7 +52,7 @@ public class DockerResourceTest {
   @Test(expected = IllegalArgumentException.class)
   public void testBuildFailsOnMissingApplicationPort() {
     DockerResource.builder()
-            .setImageName("busybox")
+            .setImageName(IMAGE_NAME)
             .setReachabilityTimeout(30)
             .build();
   }
@@ -59,7 +60,7 @@ public class DockerResourceTest {
   @Test(expected = IllegalArgumentException.class)
   public void testBuildFailsOnMissingReachabilityTimeout() {
     DockerResource.builder()
-            .setImageName("busybox")
+            .setImageName(IMAGE_NAME)
             .addApplicationPort(8080)
             .setReachabilityTimeout(0)
             .build();
@@ -97,9 +98,10 @@ public class DockerResourceTest {
     mockStartContainer();
     resource.before();
 
+    verify(dockerClient).pull(IMAGE_NAME);
     verify(dockerClient).ping();
     verify(dockerClient).createContainer(argThat(containerConfig -> {
-      assertEquals("busybox", containerConfig.image());
+      assertEquals(IMAGE_NAME, containerConfig.image());
       assertEquals(2, containerConfig.env().size());
       assertEquals("key1=value1", containerConfig.env().get(0));
       assertEquals("key2=value2", containerConfig.env().get(1));
@@ -164,6 +166,21 @@ public class DockerResourceTest {
     mockInspectContainer();
     resource.before();
     assertEquals(33333, resource.getExposedHostPort(8080));
+  }
+
+  @Test
+  public void testSkipPullNewImage() throws Throwable {
+    resource = DockerResource.builder()
+            .setDockerClientResolver(() -> dockerClient)
+            .setImageName(IMAGE_NAME)
+            .addApplicationPort(8080)
+            .setSkipPullDockerImage(true)
+            .build();
+    mockStartContainer();
+
+    resource.before();
+    verify(dockerClient, never()).pull(IMAGE_NAME);
+
   }
 
   private void mockStartContainer() throws Exception {

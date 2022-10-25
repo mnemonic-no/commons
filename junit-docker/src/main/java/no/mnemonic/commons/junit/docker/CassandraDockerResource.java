@@ -47,12 +47,13 @@ public class CassandraDockerResource extends DockerResource {
                                   String exposedPortsRange,
                                   int reachabilityTimeout,
                                   boolean skipReachabilityCheck,
+                                  boolean skipPullDockerImage,
                                   Supplier<DockerClient> dockerClientResolver,
                                   String setupScript,
                                   String truncateScript,
                                   Map<String, String> environmentVariables) {
     super(imageName, applicationPort, exposedPortsRange, reachabilityTimeout, skipReachabilityCheck,
-            dockerClientResolver, environmentVariables);
+            skipPullDockerImage, dockerClientResolver, environmentVariables);
 
     // Both parameters are optional.
     this.setupScript = !StringUtils.isBlank(setupScript) ? checkFileExists(setupScript) : null;
@@ -185,7 +186,7 @@ public class CassandraDockerResource extends DockerResource {
     @Override
     public CassandraDockerResource build() {
       return new CassandraDockerResource(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              skipReachabilityCheck, dockerClientResolver, setupScript, truncateScript, environmentVariables);
+              skipReachabilityCheck, skipPullDockerImage, dockerClientResolver, setupScript, truncateScript, environmentVariables);
     }
 
     /**

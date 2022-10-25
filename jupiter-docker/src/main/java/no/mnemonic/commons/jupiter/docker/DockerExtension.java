@@ -9,6 +9,7 @@ import no.mnemonic.commons.utilities.lambda.LambdaUtils;
 import org.junit.jupiter.api.extension.*;
 import org.mandas.docker.client.DockerClient;
 import org.mandas.docker.client.builder.resteasy.ResteasyDockerClientBuilder;
+import org.mandas.docker.client.exceptions.DockerException;
 import org.mandas.docker.client.messages.ContainerConfig;
 import org.mandas.docker.client.messages.ContainerInfo;
 import org.mandas.docker.client.messages.HostConfig;
@@ -75,6 +76,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   private final String exposedPortsRange;
   private final int reachabilityTimeout;
   private final boolean skipReachabilityCheck;
+  private final boolean skipPullDockerImage;
   private final Supplier<DockerClient> dockerClientResolver;
   private final Map<String, String> environmentVariables;
 
@@ -89,6 +91,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
    * @param exposedPortsRange     Range of ports for mapping to the outside of the container (optional)
    * @param reachabilityTimeout   Timeout until testing that container is reachable stops (optional)
    * @param skipReachabilityCheck If set skip testing that container is reachable (optional)
+   * @param skipPullDockerImage   If set skip pulling docker image (optional)
    * @param dockerClientResolver  Function to resolve DockerClient (optional)
    * @param environmentVariables  Container's environment variables (optional)
    * @throws IllegalArgumentException If one of the required parameters is not provided
@@ -98,6 +101,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
                             String exposedPortsRange,
                             int reachabilityTimeout,
                             boolean skipReachabilityCheck,
+                            boolean skipPullDockerImage,
                             Supplier<DockerClient> dockerClientResolver,
                             Map<String, String> environmentVariables) {
     if (StringUtils.isBlank(imageName)) throw new IllegalArgumentException("'imageName' not provided!");
@@ -113,6 +117,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
             .collect(Collectors.toSet()));
     this.exposedPortsRange = exposedPortsRange;
     this.reachabilityTimeout = reachabilityTimeout;
+    this.skipPullDockerImage = skipPullDockerImage;
     this.skipReachabilityCheck = skipReachabilityCheck;
     this.dockerClientResolver = ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
     this.environmentVariables = Collections.unmodifiableMap(environmentVariables);
@@ -260,6 +265,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
       // Only initialize everything once. It will be automatically teared down when the JVM shuts down.
       if (docker == null) {
         initializeDockerClient();
+        pullDockerImage();
         initializeContainer();
         testContainerReachability();
         prepareContainer();
@@ -336,6 +342,17 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     }
   }
 
+  private void pullDockerImage() {
+    if(skipPullDockerImage) {
+      return;
+    }
+    try {
+      docker.pull(imageName);
+    } catch (DockerException | InterruptedException e) {
+      throw new IllegalStateException(String.format("Could not pull docker image '%s'", imageName), e);
+    }
+  }
+
   private void initializeContainer() {
     PortBinding portBinding = StringUtils.isBlank(exposedPortsRange) ? PortBinding.randomPort("0.0.0.0") :
             PortBinding.of("0.0.0.0", exposedPortsRange);
@@ -401,6 +418,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     protected String exposedPortsRange;
     protected int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT_SECONDS;
     protected boolean skipReachabilityCheck;
+    protected boolean skipPullDockerImage = false;
     protected Supplier<DockerClient> dockerClientResolver;
     protected Map<String, String> environmentVariables = new HashMap<>();
 
@@ -411,7 +429,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
      */
     public DockerExtension build() {
       return new DockerExtension(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              skipReachabilityCheck, dockerClientResolver, environmentVariables);
+              skipReachabilityCheck, skipPullDockerImage, dockerClientResolver, environmentVariables);
     }
 
     /**
@@ -484,6 +502,16 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
      */
     public T skipReachabilityCheck() {
       this.skipReachabilityCheck = true;
+      return (T) this;
+    }
+
+    /**
+     * Skip pulling the image if set to true. Default is to pull the image before running
+     * @param skipPullDockerImage whether to pull the image
+     * @return Builder
+     */
+    public T setSkipPullDockerImage(boolean skipPullDockerImage) {
+      this.skipPullDockerImage = skipPullDockerImage;
       return (T) this;
     }
 

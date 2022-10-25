@@ -9,6 +9,7 @@ import no.mnemonic.commons.utilities.lambda.LambdaUtils;
 import org.junit.rules.ExternalResource;
 import org.mandas.docker.client.DockerClient;
 import org.mandas.docker.client.builder.resteasy.ResteasyDockerClientBuilder;
+import org.mandas.docker.client.exceptions.DockerException;
 import org.mandas.docker.client.messages.ContainerConfig;
 import org.mandas.docker.client.messages.ContainerInfo;
 import org.mandas.docker.client.messages.HostConfig;
@@ -76,6 +77,7 @@ public class DockerResource extends ExternalResource {
   private final String exposedPortsRange;
   private final int reachabilityTimeout;
   private final boolean skipReachabilityCheck;
+  private final boolean skipPullDockerImage;
   private final Supplier<DockerClient> dockerClientResolver;
   private final Map<String, String> environmentVariables;
 
@@ -90,6 +92,7 @@ public class DockerResource extends ExternalResource {
    * @param exposedPortsRange     Range of ports for mapping to the outside of the container (optional)
    * @param reachabilityTimeout   Timeout until testing that container is reachable stops (optional)
    * @param skipReachabilityCheck If set skip testing that container is reachable (optional)
+   * @param skipPullDockerImage   If set skip pulling docker image (optional)
    * @param dockerClientResolver  Function to resolve DockerClient (optional)
    * @param environmentVariables  Container's environment variables (optional)
    * @throws IllegalArgumentException If one of the required parameters is not provided
@@ -99,6 +102,7 @@ public class DockerResource extends ExternalResource {
                            String exposedPortsRange,
                            int reachabilityTimeout,
                            boolean skipReachabilityCheck,
+                           boolean skipPullDockerImage,
                            Supplier<DockerClient> dockerClientResolver,
                            Map<String, String> environmentVariables) {
     if (StringUtils.isBlank(imageName)) throw new IllegalArgumentException("'imageName' not provided!");
@@ -115,6 +119,7 @@ public class DockerResource extends ExternalResource {
     this.exposedPortsRange = exposedPortsRange;
     this.reachabilityTimeout = reachabilityTimeout;
     this.skipReachabilityCheck = skipReachabilityCheck;
+    this.skipPullDockerImage = skipPullDockerImage;
     this.dockerClientResolver = ifNull(dockerClientResolver, (Supplier<DockerClient>) this::resolveDockerClient);
     this.environmentVariables = Collections.unmodifiableMap(environmentVariables);
 
@@ -261,6 +266,7 @@ public class DockerResource extends ExternalResource {
       // Only initialize everything once. It will be automatically teared down when the JVM shuts down.
       if (docker == null) {
         initializeDockerClient();
+        pullDockerImage();
         initializeContainer();
         testContainerReachability();
         prepareContainer();
@@ -316,6 +322,17 @@ public class DockerResource extends ExternalResource {
       }
     } catch (Exception ex) {
       throw new IllegalStateException("Could not connect to docker daemon.", ex);
+    }
+  }
+
+  private void pullDockerImage() {
+    if (skipPullDockerImage) {
+      return;
+    }
+    try {
+      docker.pull(imageName);
+    } catch (DockerException | InterruptedException e) {
+      throw new IllegalStateException(String.format("Could not pull docker image '%s'", imageName), e);
     }
   }
 
@@ -384,6 +401,7 @@ public class DockerResource extends ExternalResource {
     protected String exposedPortsRange;
     protected int reachabilityTimeout = DEFAULT_REACHABILITY_TIMEOUT_SECONDS;
     protected boolean skipReachabilityCheck;
+    protected boolean skipPullDockerImage;
     protected Supplier<DockerClient> dockerClientResolver;
     protected Map<String, String> environmentVariables = new HashMap<>();
 
@@ -394,7 +412,7 @@ public class DockerResource extends ExternalResource {
      */
     public DockerResource build() {
       return new DockerResource(imageName, applicationPorts, exposedPortsRange, reachabilityTimeout,
-              skipReachabilityCheck, dockerClientResolver, environmentVariables);
+              skipReachabilityCheck, skipPullDockerImage, dockerClientResolver, environmentVariables);
     }
 
     /**
@@ -467,6 +485,17 @@ public class DockerResource extends ExternalResource {
      */
     public T skipReachabilityCheck() {
       this.skipReachabilityCheck = true;
+      return (T) this;
+    }
+
+    /**
+     * Skip pulling the image if set to true. Default is to pull the image before running
+     *
+     * @param skipPullDockerImage whether to pull the image
+     * @return Builder
+     */
+    public T setSkipPullDockerImage(boolean skipPullDockerImage) {
+      this.skipPullDockerImage = skipPullDockerImage;
       return (T) this;
     }
 

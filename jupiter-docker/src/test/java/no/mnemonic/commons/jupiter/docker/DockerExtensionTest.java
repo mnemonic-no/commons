@@ -1,5 +1,6 @@
 package no.mnemonic.commons.jupiter.docker;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mandas.docker.client.DockerClient;
@@ -20,16 +21,22 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class DockerExtensionTest {
 
+  public static final String IMAGE_NAME = "busybox";
   @Mock
   private DockerClient dockerClient;
 
-  private final DockerExtension extension = DockerExtension.builder()
-          .setDockerClientResolver(() -> dockerClient)
-          .setImageName("busybox")
-          .addEnvironmentVariable("key1", "value1")
-          .addEnvironmentVariable("key2", "value2")
-          .addApplicationPort(8080)
-          .build();
+  private DockerExtension extension;
+
+  @BeforeEach
+  void setUp() {
+    extension = DockerExtension.builder()
+            .setDockerClientResolver(() -> dockerClient)
+            .setImageName(IMAGE_NAME)
+            .addEnvironmentVariable("key1", "value1")
+            .addEnvironmentVariable("key2", "value2")
+            .addApplicationPort(8080)
+            .build();
+  }
 
   @Test
   public void testBuildFailsOnMissingImageName() {
@@ -42,7 +49,7 @@ public class DockerExtensionTest {
   @Test
   public void testBuildFailsOnMissingApplicationPort() {
     assertThrows(IllegalArgumentException.class, () -> DockerExtension.builder()
-            .setImageName("busybox")
+            .setImageName(IMAGE_NAME)
             .setReachabilityTimeout(30)
             .build());
   }
@@ -50,7 +57,7 @@ public class DockerExtensionTest {
   @Test
   public void testBuildFailsOnMissingReachabilityTimeout() {
     assertThrows(IllegalArgumentException.class, () -> DockerExtension.builder()
-            .setImageName("busybox")
+            .setImageName(IMAGE_NAME)
             .addApplicationPort(8080)
             .setReachabilityTimeout(0)
             .build());
@@ -89,8 +96,9 @@ public class DockerExtensionTest {
     extension.beforeAll(null);
 
     verify(dockerClient).ping();
+    verify(dockerClient).pull(IMAGE_NAME);
     verify(dockerClient).createContainer(argThat(containerConfig -> {
-      assertEquals("busybox", containerConfig.image());
+      assertEquals(IMAGE_NAME, containerConfig.image());
       assertEquals(2, containerConfig.env().size());
       assertEquals("key1=value1", containerConfig.env().get(0));
       assertEquals("key2=value2", containerConfig.env().get(1));
@@ -155,6 +163,21 @@ public class DockerExtensionTest {
     mockInspectContainer();
     extension.beforeAll(null);
     assertEquals(33333, extension.getExposedHostPort(8080));
+  }
+
+  @Test
+  public void testSkipPullNewImage() throws Throwable {
+    extension = DockerExtension.builder()
+            .setDockerClientResolver(() -> dockerClient)
+            .setImageName(IMAGE_NAME)
+            .addApplicationPort(8080)
+            .setSkipPullDockerImage(true)
+            .build();
+    mockStartContainer();
+
+    extension.beforeAll(null);
+    verify(dockerClient, never()).pull(IMAGE_NAME);
+
   }
 
   private void mockStartContainer() throws Exception {
