@@ -151,6 +151,8 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       } else {
         // create a thread that will shutdown the container
         new ShutdownTask(this);
+        // ensure to at least log every uncaught exception
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> LOGGER.error(e, "Uncaught exception from thread %s: %s", t.getName(), e.getMessage()));
       }
 
       // handle container plugins

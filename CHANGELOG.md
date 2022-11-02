@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.19] - 2022-11-03
+### Added
+ARGUS-31803
+- Added default uncaught exception handling to ComponentContainer to ensure logging of all exceptions.
+
 ## [0.4.18] - 2022-11-02
 ### Added
 ARGUS-31800
