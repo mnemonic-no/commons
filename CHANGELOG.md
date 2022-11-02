@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.18] - 2022-11-02
+### Added
+ARGUS-31800
+- Added `AppendUtils.appendCollection()` which handles collections with a given max size.
+
 ## [0.4.17] - 2022-10-25
 ### Changed
 ARGUS-28077
