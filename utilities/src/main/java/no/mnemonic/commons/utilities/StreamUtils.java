@@ -1,8 +1,6 @@
 package no.mnemonic.commons.utilities;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 
 public class StreamUtils {
 
@@ -52,5 +50,21 @@ public class StreamUtils {
       totalread += read;
       for (StreamProgressMonitor monitor : monitors) monitor.progressReport(totalread);
     }
+  }
+
+  /**
+   * Reads all of the data, until EOF signal, from the InputStream into a byte array. Beware, if InputStream is
+   * delayed, or a non-terminating stream, this method may block for a long time.
+   *
+   * @param is input stream to read from
+   * @param close should the input stream be closed after the operation is done
+   * @throws IOException if an exception occurs while reading
+   */
+  public static byte[] readFullStream(InputStream is, boolean close) throws IOException {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      StreamUtils.writeUntilEOF(is, out);
+      if(close) is.close();
+
+      return out.toByteArray();
   }
 }

@@ -5,10 +5,10 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -78,4 +78,11 @@ public class StreamUtilsTest {
     verify(monitor, times(2)).progressReport(anyInt());
   }
 
+  @Test
+  public void readFullStreamTest() throws IOException {
+    byte[] data = new byte[]{1,2,3,4,5,6,7,8,9,10};
+    InputStream is= new ByteArrayInputStream(data);
+    byte[] readData = StreamUtils.readFullStream(is, true);
+    assertArrayEquals(data, readData);
+  }
 }
