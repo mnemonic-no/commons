@@ -60,7 +60,8 @@ import static no.mnemonic.commons.utilities.collections.MapUtils.map;
  * and {@link #prepareContainer()} for more specific use cases, for instance when testing a specific database.
  * See {@link CassandraDockerExtension} as an example.
  * <p>
- * <h3>Proxy settings</h3>
+ * <b>Proxy settings</b>
+ * <p>
  * The DockerExtension will by default use system properties to determine proxy settings when communicating with the
  * docker daemon. To completely disable proxy, you can set the system property "-DDockerExtension.disable.proxy=true".
  */

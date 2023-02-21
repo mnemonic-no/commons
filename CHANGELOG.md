@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.21] - 2023-02-21
+### Changed
+ARGUS-32474
+- Made project build with JDK17 (failed on javadoc generation).
+- Upgraded RestEasy to the latest version compatible with docker-client.
+- Upgraded other dependencies to the newest minor/bugfix versions.
+
 ## [0.4.20] - 2022-11-08
 ### Added
 ARGUS-31958
