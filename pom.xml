@@ -64,7 +64,7 @@
     <maven.jar.version>3.1.1</maven.jar.version>
     <maven.javadoc.version>3.1.0</maven.javadoc.version>
     <maven.license.version>1.20</maven.license.version>
-    <maven.nexus.staging.version>1.6.8</maven.nexus.staging.version>
+    <maven.nexus.staging.version>1.6.13</maven.nexus.staging.version>
     <maven.release.version>2.5.3</maven.release.version>
     <maven.resources.version>3.1.0</maven.resources.version>
     <maven.source.version>3.0.1</maven.source.version>
