@@ -15,7 +15,9 @@ import no.mnemonic.commons.utilities.collections.ListUtils;
 import no.mnemonic.commons.utilities.collections.MapUtils;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -127,7 +129,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       try {
         this.destroy();
       } catch (Exception e) {
-        getLogger().error("Error when calling destroy", e);
+        getLogger().error(e, "Error when calling destroy");
       }
     }
   }
@@ -136,6 +138,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
   /**
    * Initialize this container, and any subcontainers it may have
+   *
    * @return The initialized container
    */
   public ComponentContainer initialize() {
@@ -171,7 +174,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       // notify listeners
       containerListeners.forEach(l -> tryTo(() -> l.notifyContainerStarted(this), e -> LOGGER.error(e, "Error calling notifyContainerStarted")));
     } catch (RuntimeException e) {
-      getLogger().error("Error initializing container", e);
+      getLogger().error(e, "Error initializing container");
       //if startup fails, make sure to exit the container
       destroy();
       throw e;
@@ -199,13 +202,22 @@ public class ComponentContainer implements Component, ComponentListener, Compone
       getChildContainers().forEach(ComponentContainer::destroy);
 
       // stop all nodes in this container
-      nodes.values().forEach(this::stopNode);
+      CompletableFuture.allOf(
+              nodes.values().stream()
+                      .filter(ComponentNode::isStarted)
+                      .map(this::stopNode)
+                      .toArray(CompletableFuture[]::new)
+      ).get();
+      getLogger().warning("Shutdown complete");
 
       // stop nodes not registered in initial dependency graph
       initializedComponents.clear();
 
-    } catch (RuntimeException e) {
-      getLogger().error("Error in destroy()", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      getLogger().error(e, "destroy() interrupted");
+    } catch (ExecutionException | RuntimeException e) {
+      getLogger().error(e, "Error in destroy()");
     } finally {
 
       // remove parent reference
@@ -215,7 +227,6 @@ public class ComponentContainer implements Component, ComponentListener, Compone
         }
       }
 
-      getLogger().warning("Shutdown complete");
       setState(STOPPED);
       nodes.clear();
 
@@ -332,10 +343,17 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   private void activate() {
     try {
       getLogger().info("Initializing " + this);
-      nodes.values().forEach(this::startNode);
-      if (getLogger().isInfo()) getLogger().info("Initialization complete");
+
+      // stop all nodes in this container
+      CompletableFuture.allOf(
+              nodes.values().stream()
+                      .map(this::startNode)
+                      .toArray(CompletableFuture[]::new)
+      ).get();
+      getLogger().info("Initialization complete");
+
     } catch (Exception e) {
-      getLogger().error("Caught exception during initialization", e);
+      getLogger().error(e, "Caught exception during initialization");
       destroy();
       throw new ComponentException(e);
     }
@@ -348,13 +366,16 @@ public class ComponentContainer implements Component, ComponentListener, Compone
    *
    * @param n node to start
    */
-  private void startNode(ComponentNode n) {
-    if (n.isStarted()) return;
-    n.setStarted(true);
-
+  private CompletableFuture<?> startNode(ComponentNode n) {
     // first start all components which we have an initialization dependency to
-    n.getInitializationDependencies().forEach(this::startNode);
+    return n.startup(() -> CompletableFuture.allOf(
+            n.getInitializationDependencies().stream()
+                    .map(this::startNode)
+                    .toArray(CompletableFuture[]::new)
+    ).thenRun(() -> doStart(n)));
+  }
 
+  private void doStart(ComponentNode n) {
     // see if any lifecycle manager can start this component
     for (ComponentLifecycleHandler manager : lifecycleManagers) {
       if (!manager.appliesTo(n.getObject())) continue;
@@ -371,12 +392,17 @@ public class ComponentContainer implements Component, ComponentListener, Compone
    *
    * @param n node to stop
    */
-  private void stopNode(ComponentNode n) {
-    if (!n.isStarted()) return;
-    n.setStarted(false);
-
+  private CompletableFuture<?> stopNode(ComponentNode n) {
     // first stop all components which we have a destruction dependency to
-    n.getDestructionDependencies().forEach(this::stopNode);
+    return n.shutdown(() -> CompletableFuture.allOf(
+            n.getDestructionDependencies().stream()
+                    .filter(ComponentNode::isStarted)
+                    .map(this::stopNode)
+                    .toArray(CompletableFuture[]::new)
+    ).thenRun(() -> doStop(n)));
+  }
+
+  private void doStop(ComponentNode n) {
 
     // see if any lifecycle manager can stop this component
     for (ComponentLifecycleHandler manager : lifecycleManagers) {
@@ -386,7 +412,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
         manager.stopComponent(n.getObject());
         if (getLogger().isDebug()) getLogger().debug("Finished stopComponent for component " + n.getObjectName());
       } catch (Exception e) {
-        getLogger().error("Error calling stopComponent on " + n.getObject(), e);
+        getLogger().error(e, "Error calling stopComponent on " + n.getObject());
       }
       // remove initialization mark
       initializedComponents.remove(n.getObject());
@@ -417,7 +443,7 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
   private void resolveDependencies() {
     //make all dependency resolvers scan all objects
-    dependencyResolvers.forEach(r->r.scan(ListUtils.list(nodes.values(), ComponentNode::getObject)));
+    dependencyResolvers.forEach(r -> r.scan(ListUtils.list(nodes.values(), ComponentNode::getObject)));
     //then resolve dependencies for each node
     nodes.keySet().forEach(oid -> resolveDependsOn(nodes.get(oid)));
   }
@@ -425,13 +451,13 @@ public class ComponentContainer implements Component, ComponentListener, Compone
   private void resolveDependsOn(ComponentNode node) {
     //check for Dependency annotations on getters
     getDependencies(node).stream()
-            .filter(dep -> dep != null)
+            .filter(Objects::nonNull)
             .forEach(dep -> {
               if (dep instanceof Collection) {
                 //add dependency to each member of collection
                 ((Collection<?>) dep).stream()
                         .map(objectNodeMap::get)
-                        .filter(o -> o != null)
+                        .filter(Objects::nonNull)
                         .forEach(depnode -> addDependency(node, depnode));
               } else {
                 //add dependency to object
@@ -465,7 +491,6 @@ public class ComponentContainer implements Component, ComponentListener, Compone
 
     public void run() {
       try {
-        // usedShutdownThread = true;
         rootContainer.getLogger().warning("Shutdownhook triggered");
         // drop out of this shutdownhook if container is already shut down
         synchronized (STATE_LOCK) {

@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.23] - 2023-03-11
+### Changed
+ARGUS-34837
+- Changed `ComponentContainer` methods `initialize()` and `destroy()` to run 
+  startup and shutdown in parallel threads where possible
+  to reduce startup/shutdown times.
+
 ## [0.4.22] - 2023-03-03
 ### Fixed
 ARGUS-33367

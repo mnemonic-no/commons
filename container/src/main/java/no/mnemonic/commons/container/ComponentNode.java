@@ -6,15 +6,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 class ComponentNode {
 
   private final String objectName;
   private final Object object;
-  private boolean started;
+  private final AtomicReference<CompletableFuture<?>> startFuture = new AtomicReference<>();
+  private final AtomicReference<CompletableFuture<?>> stopFuture = new AtomicReference<>();
 
-  private Set<ComponentNode> initializationDependencies = new HashSet<>();
-  private Set<ComponentNode> destructionDependencies = new HashSet<>();
+  private final Set<ComponentNode> initializationDependencies = new HashSet<>();
+  private final Set<ComponentNode> destructionDependencies = new HashSet<>();
 
   ComponentNode(String objectName, Object object) {
     this.object = object;
@@ -34,12 +38,39 @@ class ComponentNode {
     return objectName;
   }
 
+  /**
+   * @return true if initialization of this component has been started. Startup is not necessarily done yet.
+   */
   boolean isStarted() {
-    return started;
+    return startFuture.get() != null;
   }
 
-  void setStarted(boolean set) {
-    this.started = set;
+  /**
+   * Invoke this method to get hold of the existing initialization future, or initialize a new initialization future if none is already created
+   * @param supplier a supplier which will start a new initialization thread for this component
+   * @return the existing or newly created future
+   */
+  CompletableFuture<?> startup(Supplier<CompletableFuture<?>> supplier) {
+    return startFuture.updateAndGet(exist -> {
+      if (exist != null) return exist;
+      return supplier.get();
+    });
+  }
+
+  /**
+   * Invoke this method to get hold of the existing shutdown future, or initialize a new shutdown future if none is already created
+   * @param supplier a supplier which will start a new shutdown thread for this component
+   * @return the existing or newly created future
+   */
+  CompletableFuture<?> shutdown(Supplier<CompletableFuture<?>> supplier) {
+    return stopFuture.updateAndGet(exist -> {
+      if (exist != null) return exist;
+      CompletableFuture<?> startFutureTask = startFuture.get();
+      if (startFutureTask != null && !startFutureTask.isDone()) {
+        startFutureTask.cancel(true);
+      }
+      return supplier.get();
+    });
   }
 
   /**
