@@ -9,7 +9,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>no.mnemonic.commons</groupId>
-    <version>0.4.26-SNAPSHOT</version>
+    <version>0.5.0-SNAPSHOT</version>
   </parent>
 
   <dependencies>
@@ -22,6 +22,11 @@
       <groupId>org.mandas</groupId>
       <artifactId>docker-client</artifactId>
       <version>${docker.client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.immutables</groupId>
+      <artifactId>value</artifactId>
+      <version>${immutables.version}</version>
     </dependency>
     <!-- Use RESTEasy as a JAX-RS client. Requires Jackson as well. -->
     <dependency>
@@ -47,6 +52,8 @@
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit.jupiter.version}</version>
     </dependency>
+
+    <!-- test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>

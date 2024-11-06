@@ -33,7 +33,10 @@ import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
  * </pre>
  * See {@link DockerResource.Builder} and {@link ElasticSearchDockerResource.Builder} for more information on the
  * configuration properties.
+ *
+ * @deprecated Use jupiter-docker instead
  */
+@Deprecated
 public class ElasticSearchDockerResource extends DockerResource {
 
   private final Set<String> deleteIndices;

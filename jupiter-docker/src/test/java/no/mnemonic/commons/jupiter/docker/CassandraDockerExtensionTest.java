@@ -7,7 +7,9 @@ import org.mandas.docker.client.LogStream;
 import org.mandas.docker.client.exceptions.DockerException;
 import org.mandas.docker.client.messages.ContainerCreation;
 import org.mandas.docker.client.messages.ExecCreation;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Path;
@@ -126,8 +128,8 @@ public class CassandraDockerExtensionTest {
   public void testInitializeSuccessful() throws Throwable {
     mockAndExecuteSuccessfulInitialization();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any());
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any(), any(), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any(), any(), any());
     verify(dockerClient, times(2)).execStart(any());
     verify(dockerClient, times(2)).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -137,7 +139,7 @@ public class CassandraDockerExtensionTest {
     mockTestReachability("Success");
     extensionWithoutScripts.beforeAll(null);
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any(), any(), any());
     verify(dockerClient).execStart(any());
     verify(dockerClient, never()).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -155,7 +157,7 @@ public class CassandraDockerExtensionTest {
 
   @Test
   public void testTruncateFailsOnExecCreateException() throws Throwable {
-    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any())).thenThrow(DockerException.class);
+    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any(), any(), any())).thenThrow(DockerException.class);
     mockAndExecuteSuccessfulInitialization();
 
     IllegalStateException ex = assertThrows(IllegalStateException.class, () -> extension.afterEach(null));
@@ -164,7 +166,7 @@ public class CassandraDockerExtensionTest {
 
   @Test
   public void testTruncateFailsOnExecStartException() throws Throwable {
-    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any())).thenReturn(execCreation("executionID"));
+    when(dockerClient.execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any(), any(), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
     mockAndExecuteSuccessfulInitialization();
 
@@ -187,7 +189,7 @@ public class CassandraDockerExtensionTest {
     mockAndExecuteSuccessfulInitialization();
     extension.afterEach(null);
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any(), any(), any());
   }
 
   @Test
@@ -224,7 +226,8 @@ public class CassandraDockerExtensionTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
+
+    when(dockerClient.execCreate(any(), eq(command), any(), any(), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 

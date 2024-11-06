@@ -32,7 +32,10 @@ import org.junit.rules.ExternalResource;
  * which can be used in test.
  *
  * @param <T> wrapped {@link DockerResource} type
+ *
+ * @deprecated Use jupiter-docker instead
  */
+@Deprecated
 public class SingletonDockerResourceWrapper<T extends DockerResource> extends ExternalResource {
 
   private final T dockerResource;

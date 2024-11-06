@@ -135,8 +135,8 @@ public class MariaDBDockerResourceTest {
   public void testInitializeSuccessful() throws Throwable {
     mockAndExecuteSuccessfulInitialization();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), any());
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), any(), any(), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/setup.sql"}), any(), any(), any());
     verify(dockerClient, times(2)).execStart(any());
   }
 
@@ -145,7 +145,7 @@ public class MariaDBDockerResourceTest {
     mockTestReachability(MYSQLD_IS_ALIVE);
     resourceWithoutScripts.before();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysqladmin", "-uroot", "-proot", "ping"}), any(), any(), any());
     verify(dockerClient).execStart(any());
     verify(dockerClient, never()).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -197,7 +197,7 @@ public class MariaDBDockerResourceTest {
     mockAndExecuteSuccessfulInitialization();
     resource.truncate();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"mysql", "-uroot", "-proot", "-e", "source /tmp/truncate.sql"}), any(), any(), any());
   }
 
   @Test
@@ -233,7 +233,7 @@ public class MariaDBDockerResourceTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
+    when(dockerClient.execCreate(any(), eq(command), any(), any(), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 

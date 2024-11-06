@@ -32,7 +32,10 @@ import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
  * This resource will by default expose port 3306.
  * See {@link DockerResource.Builder} and {@link MariaDBDockerResource.Builder} for more information on the
  * configuration properties.
+ *
+ * @deprecated Use jupiter-docker instead
  */
+@Deprecated
 public class MariaDBDockerResource extends DockerResource {
 
   private static final String SUCCESS_MESSAGE = "mysqld is alive\n";

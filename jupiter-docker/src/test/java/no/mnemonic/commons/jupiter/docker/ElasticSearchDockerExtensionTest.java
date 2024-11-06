@@ -75,7 +75,7 @@ public class ElasticSearchDockerExtensionTest {
     mockExecute(REACHABILITY_COMMAND, REACHABILITY_SUCCESSFUL_OUTPUT);
     extension.beforeAll(null);
 
-    verify(dockerClient).execCreate(any(), eq(REACHABILITY_COMMAND), any());
+    verify(dockerClient).execCreate(any(), eq(REACHABILITY_COMMAND), any(), any(), any());
     verify(dockerClient).execStart(any());
   }
 
@@ -117,7 +117,7 @@ public class ElasticSearchDockerExtensionTest {
     extension.beforeAll(null);
     extension.afterEach(null);
 
-    verify(dockerClient).execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), any());
+    verify(dockerClient).execCreate(any(), eq(DELETE_ALL_INDICES_COMMAND), any(), any(), any());
   }
 
   @Test
@@ -136,7 +136,7 @@ public class ElasticSearchDockerExtensionTest {
     elastic.beforeAll(null);
     elastic.afterEach(null);
 
-    verify(dockerClient).execCreate(any(), eq(cmd), any());
+    verify(dockerClient).execCreate(any(), eq(cmd), any(), any(), any());
   }
 
   private void mockStartContainer() throws Exception {
@@ -149,7 +149,7 @@ public class ElasticSearchDockerExtensionTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
+    when(dockerClient.execCreate(any(), eq(command), any(), any(), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 

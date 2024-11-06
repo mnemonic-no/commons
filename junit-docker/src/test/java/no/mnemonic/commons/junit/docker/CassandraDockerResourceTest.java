@@ -133,8 +133,8 @@ public class CassandraDockerResourceTest {
   public void testInitializeSuccessful() throws Throwable {
     mockAndExecuteSuccessfulInitialization();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any());
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any(), any(), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/setup.cql"}), any(), any(), any());
     verify(dockerClient, times(2)).execStart(any());
     verify(dockerClient, times(2)).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -144,7 +144,7 @@ public class CassandraDockerResourceTest {
     mockTestReachability("Success");
     resourceWithoutScripts.before();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-e", "describe cluster"}), any(), any(), any());
     verify(dockerClient).execStart(any());
     verify(dockerClient, never()).copyToContainer(isA(Path.class), any(), eq("/tmp/"));
   }
@@ -194,7 +194,7 @@ public class CassandraDockerResourceTest {
     mockAndExecuteSuccessfulInitialization();
     resource.truncate();
 
-    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any());
+    verify(dockerClient).execCreate(any(), eq(new String[]{"cqlsh", "-f", "/tmp/truncate.cql"}), any(), any(), any());
   }
 
   @Test
@@ -230,7 +230,7 @@ public class CassandraDockerResourceTest {
     String executionID = UUID.randomUUID().toString();
     LogStream logStream = mock(LogStream.class);
     when(logStream.readFully()).thenReturn(output);
-    when(dockerClient.execCreate(any(), eq(command), any())).thenReturn(execCreation(executionID));
+    when(dockerClient.execCreate(any(), eq(command), any(), any(), any())).thenReturn(execCreation(executionID));
     when(dockerClient.execStart(executionID)).thenReturn(logStream);
   }
 

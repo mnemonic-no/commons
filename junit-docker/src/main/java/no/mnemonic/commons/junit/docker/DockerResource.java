@@ -65,7 +65,10 @@ import static no.mnemonic.commons.utilities.collections.MapUtils.map;
  * <p>
  * The DockerResource will by default use system properties to determine proxy settings when communicating with the
  * docker daemon. To completely disable proxy, you can set the system property "-DDockerResource.disable.proxy=true".
+ *
+ * @deprecated Use jupiter-docker instead
  */
+@Deprecated
 public class DockerResource extends ExternalResource {
 
   private static final String DOCKER_HOST_ENVIRONMENT_VARIABLE = "DOCKER_HOST";

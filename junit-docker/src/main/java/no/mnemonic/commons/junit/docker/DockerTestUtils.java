@@ -7,7 +7,10 @@ import java.util.regex.Pattern;
 
 /**
  * Utility class for working with Docker environments during unit tests.
+ *
+ * @deprecated Use jupiter-docker instead
  */
+@Deprecated
 public class DockerTestUtils {
 
   private static final String ENVIRONMENT_VARIABLE = System.getenv("DOCKER_HOST");
