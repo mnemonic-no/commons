@@ -12,12 +12,13 @@ import org.mockito.MockitoAnnotations;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 
 import static no.mnemonic.commons.container.BootStrap.APPLICATION_PROPERTIES_FILE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -52,13 +53,33 @@ public class BootStrapTest {
   }
 
   @Test
-  public void testBootStrap() throws BootStrap.BootStrapException, IOException {
+  public void testBootStrapWithSystemProperty() throws BootStrap.BootStrapException, IOException {
+    File propsFile = createPropertyFile("prop", "something", "else");
+    System.setProperty(APPLICATION_PROPERTIES_FILE, propsFile.getAbsolutePath());
     System.setProperty("propertyvalue", "1");
-    new MyBootStrap().boot(new String[]{
+    ComponentContainer container = new MyBootStrap().boot(new String[]{
             "guice",
             "module=" + MyModule.class.getName()
     });
     verify(containerStarted).accept(any());
+    MyComponent component = (MyComponent) container.getComponents().get(MyComponent.class.getSimpleName());
+    assertNull(component.user);
+  }
+
+  @Test
+  public void testBootStrapWithEnvironment() throws BootStrap.BootStrapException, IOException {
+    File propsFile = createPropertyFile("prop", "something", "else");
+    System.setProperty(APPLICATION_PROPERTIES_FILE, propsFile.getAbsolutePath());
+    System.setProperty("propertyvalue", "1");
+    ComponentContainer container = new MyBootStrap().boot(new String[]{
+            "-E",
+            "guice",
+            "module=" + MyModule.class.getName()
+    });
+    verify(containerStarted).accept(any());
+    MyComponent component = (MyComponent) container.getComponents().get(MyComponent.class.getSimpleName());
+    //just checking this property (USER) which will always be present in a functioning Linux environment
+    assertNotNull(component.user);
   }
 
   @Test
@@ -101,10 +122,17 @@ public class BootStrapTest {
 
   static class MyComponent {
     int myValue;
+    String user;
 
     @Inject
     public MyComponent(@Named("propertyvalue") int myValue) {
       this.myValue = myValue;
+    }
+
+    @Inject(optional = true)
+    public MyComponent setUser(@Named("USER") String user) {
+      this.user = user;
+      return this;
     }
   }
 

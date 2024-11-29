@@ -7,6 +7,7 @@ import no.mnemonic.commons.container.providers.BeanProvider;
 import no.mnemonic.commons.container.providers.GuiceBeanProvider;
 import no.mnemonic.commons.container.providers.SpringXmlBeanProvider;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
+import no.mnemonic.commons.utilities.collections.SetUtils;
 
 import java.io.File;
 import java.util.Arrays;
@@ -36,6 +37,7 @@ public class BootStrap implements Versioned, ComponentListener {
   private static final String PROP_GUICE = "guice";
   private static final String PROP_SPRING = "spring";
   private static final String PROP_MODULE = "module";
+  private static final String SWITCH_ENV = "-E";
 
   //interface methods
 
@@ -102,11 +104,34 @@ public class BootStrap implements Versioned, ComponentListener {
         return null;
       }
 
+      int nextarg = 0;
+      boolean useEnv = false;
+
+      //extract flags
+      while (nextarg < args.length && !SetUtils.in(args[nextarg], PROP_SPRING, PROP_GUICE)) {
+        switch (args[nextarg]) {
+          case SWITCH_ENV:
+            useEnv = true;
+            break;
+          default:
+            usage();
+            throw new BootStrapException(null, EXIT_CODE_ARGUMENT_ERROR);
+        }
+        nextarg++;
+      }
+
+      args = Arrays.copyOfRange(args, nextarg, args.length);
+
+      if (!SetUtils.in(args[0], PROP_SPRING, PROP_GUICE)) {
+        usage();
+        throw new BootStrapException(null, EXIT_CODE_ARGUMENT_ERROR);
+      }
+
       switch (args[0]) {
         case PROP_SPRING:
-          return springBoot(args[1], Arrays.copyOfRange(args, 2, args.length));
+          return springBoot(args[1], useEnv, Arrays.copyOfRange(args, 2, args.length));
         case PROP_GUICE:
-          return guiceBoot(Arrays.copyOfRange(args, 1, args.length));
+          return guiceBoot(useEnv, Arrays.copyOfRange(args, 1, args.length));
         default:
           usage();
           throw new BootStrapException(null, EXIT_CODE_ARGUMENT_ERROR);
@@ -148,7 +173,7 @@ public class BootStrap implements Versioned, ComponentListener {
     return new Property(m.group(1), m.group(2));
   }
 
-  private ComponentContainer guiceBoot(String[] remainingArgs) {
+  private ComponentContainer guiceBoot(boolean useEnv, String[] remainingArgs) {
     Set<String> moduleClasses = new HashSet<>();
     //noinspection MismatchedQueryAndUpdateOfCollection
     Properties containerProps = new Properties();
@@ -160,10 +185,10 @@ public class BootStrap implements Versioned, ComponentListener {
         containerProps.setProperty(p.key, p.value);
       }
     }
-    return bootContainer(getGuiceBootContainer(moduleClasses));
+    return bootContainer(getGuiceBootContainer(useEnv, moduleClasses));
   }
 
-  private ComponentContainer springBoot(String springResource, String[] containerParameters) {
+  private ComponentContainer springBoot(String springResource, boolean useEnv, String[] containerParameters) {
     //container props not used for now, keep for later
     //noinspection MismatchedQueryAndUpdateOfCollection
     Properties containerProps = new Properties();
@@ -171,7 +196,7 @@ public class BootStrap implements Versioned, ComponentListener {
       Property p = parseProperty(s);
       containerProps.setProperty(p.key, p.value);
     }
-    return bootContainer(getSpringBootContainer(springResource));
+    return bootContainer(getSpringBootContainer(useEnv, springResource));
   }
 
   private ComponentContainer bootContainer(BeanProvider beanProvider) {
@@ -184,23 +209,26 @@ public class BootStrap implements Versioned, ComponentListener {
     return bootContainer;
   }
 
-  private static Properties resolveProperties() {
+  private static Properties resolveProperties(boolean useEnv) {
     String propertyFileName = System.getProperty(APPLICATION_PROPERTIES_FILE);
-    Properties properties = new Properties(System.getProperties());
+    Properties baseProperties = new Properties();
+    if (useEnv) baseProperties.putAll(System.getenv());
+    baseProperties.putAll(System.getProperties());
+    Properties properties = new Properties(baseProperties);
     if (propertyFileName != null) {
       PropertiesResolver.loadPropertiesFile(new File(propertyFileName), properties);
     }
     return properties;
   }
 
-  private BeanProvider getSpringBootContainer(String bootDescriptorName) {
+  private BeanProvider getSpringBootContainer(boolean useEnv, String bootDescriptorName) {
     return SpringXmlBeanProvider.builder()
             .addInput(bootDescriptorName)
-            .setProperties(resolveProperties())
+            .setProperties(resolveProperties(useEnv))
             .build();
   }
 
-  private BeanProvider getGuiceBootContainer(Set<String> moduleClasses) {
+  private BeanProvider getGuiceBootContainer(boolean useEnv, Set<String> moduleClasses) {
     if (CollectionUtils.isEmpty(moduleClasses)) {
       throw new IllegalArgumentException("No modules specified");
     }
@@ -209,7 +237,7 @@ public class BootStrap implements Versioned, ComponentListener {
       for (String clz : moduleClasses) {
         modules.add((Module) Class.forName(clz).newInstance());
       }
-      return new GuiceBeanProvider(resolveProperties(), modules.toArray(new Module[]{}));
+      return new GuiceBeanProvider(resolveProperties(useEnv), modules.toArray(new Module[]{}));
     } catch (Exception e) {
       throw new RuntimeException("Error booting modules", e);
     }
