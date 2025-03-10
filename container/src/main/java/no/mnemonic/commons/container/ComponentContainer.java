@@ -380,7 +380,12 @@ public class ComponentContainer implements Component, ComponentListener, Compone
     for (ComponentLifecycleHandler manager : lifecycleManagers) {
       if (!manager.appliesTo(n.getObject())) continue;
       getLogger().info("Starting " + n.getObjectName() + "/" + n.getObject());
-      manager.startComponent(n.getObject());
+      try {
+        manager.startComponent(n.getObject());
+      } catch (Exception e) {
+        LOGGER.error(e, "Caught exception during starting %s", n.getObjectName());
+        throw e;
+      }
       // mark component as initialized
       initializedComponents.add(n.getObject());
     }

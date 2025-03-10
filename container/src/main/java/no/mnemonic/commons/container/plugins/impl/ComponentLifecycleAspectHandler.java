@@ -1,7 +1,6 @@
 package no.mnemonic.commons.container.plugins.impl;
 
 import no.mnemonic.commons.component.LifecycleAspect;
-import no.mnemonic.commons.component.ValidationAspect;
 import no.mnemonic.commons.container.plugins.ComponentLifecycleHandler;
 
 public class ComponentLifecycleAspectHandler implements ComponentLifecycleHandler {
