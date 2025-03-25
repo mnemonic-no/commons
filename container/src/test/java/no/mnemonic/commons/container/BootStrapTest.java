@@ -63,7 +63,7 @@ public class BootStrapTest {
     });
     verify(containerStarted).accept(any());
     MyComponent component = (MyComponent) container.getComponents().get(MyComponent.class.getSimpleName());
-    assertNull(component.user);
+    assertNull(component.home);
   }
 
   @Test
@@ -79,7 +79,7 @@ public class BootStrapTest {
     verify(containerStarted).accept(any());
     MyComponent component = (MyComponent) container.getComponents().get(MyComponent.class.getSimpleName());
     //just checking this property (USER) which will always be present in a functioning Linux environment
-    assertNotNull(component.user);
+    assertNotNull(component.home);
   }
 
   @Test
@@ -122,7 +122,7 @@ public class BootStrapTest {
 
   static class MyComponent {
     int myValue;
-    String user;
+    String home;
 
     @Inject
     public MyComponent(@Named("propertyvalue") int myValue) {
@@ -130,8 +130,8 @@ public class BootStrapTest {
     }
 
     @Inject(optional = true)
-    public MyComponent setUser(@Named("USER") String user) {
-      this.user = user;
+    public MyComponent setHome(@Named("HOME") String home) {
+      this.home = home;
       return this;
     }
   }

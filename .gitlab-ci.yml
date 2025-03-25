@@ -1,0 +1,65 @@
+variables:
+  SERVICE_SLUG: "joss-commons"
+
+include:
+  - project: development/cicd/gitlab-templates
+    ref: main
+    file: Misc/Rules.yml
+  - project: development/backend/cicd-pipelines
+    ref: main
+    file:
+      ###--------SETUP-----------###
+      - CI/Common.Variables.yml
+      - CI/Common.Pipeline.Setup.yml
+      ###--------STAGES----------###
+      - CI/Stage/Setup.yml
+      - CI/Stage/Build.UnitTest.yml
+      - CI/Stage/Upload.Metrics.yml
+      - CI/Stage/Release.yml
+      - CI/Stage/Post.Release.Maven.Artifactory.yml
+
+stages: # List of stages for jobs, and their order of execution
+  - setup
+  - unit-test
+  - upload-metrics
+  - release
+  - post-release
+
+# Job to trigger a build and sync to Maven. Actual execution will be done on osl-gitsync1.!reference:
+# TODO: Set up dedicated runner instead of osl-gitsync1, and control build in this pipeline spec
+trigger-maven-central-sync:
+  stage: post-release
+  tags:
+    - development
+  rules:
+    # do not run in forked repos
+    - if: $CI_PROJECT_UPSTREAM_BOOL != "true"
+      when: never
+    # only run on default branch
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - touch $HOME/.ssh/known_hosts && ssh-keygen -R osl-gitsync1 && ssh-keyscan osl-gitsync1 >> $HOME/.ssh/known_hosts
+    # protect the keyfile
+    - chmod 600 ${GITSYNC_KEY}
+
+  script:
+    - ssh -T -o IdentitiesOnly=yes -i ${GITSYNC_KEY} gitsync@osl-gitsync1 mvnsync https://git:${GITSYNC_TOKEN}@gitlab.mnemonic.no/development/backend/joss/commons.git ${NO_SNAPSHOT_VERSION}
+
+# Job to trigger a sync to GitHub. Actual execution will be done on osl-gitsync1.!reference:
+# TODO: Set up dedicated runner instead of osl-gitsync1, and control build in this pipeline spec
+trigger-github-sync:
+  stage: post-release
+  tags:
+    - development
+  rules:
+    # do not run in forked repos
+    - if: $CI_PROJECT_UPSTREAM_BOOL != "true"
+      when: never
+    # only run on default branch
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - touch $HOME/.ssh/known_hosts && ssh-keygen -R osl-gitsync1 && ssh-keyscan osl-gitsync1 >> $HOME/.ssh/known_hosts
+    # protect the keyfile
+    - chmod 600 ${GITSYNC_KEY}
+  script:
+    - ssh -T -o IdentitiesOnly=yes -i ${GITSYNC_KEY} gitsync@osl-gitsync1 gitsync https://git:${GITSYNC_TOKEN}@gitlab.mnemonic.no/development/backend/joss/commons.git https://github.com/mnemonic-no/commons.git
