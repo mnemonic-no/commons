@@ -18,6 +18,8 @@ import org.mandas.docker.client.messages.PortBinding;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ import static no.mnemonic.commons.utilities.ObjectUtils.ifNull;
 import static no.mnemonic.commons.utilities.collections.ListUtils.list;
 import static no.mnemonic.commons.utilities.collections.MapUtils.Pair.T;
 import static no.mnemonic.commons.utilities.collections.MapUtils.map;
+import static org.mandas.docker.client.DockerClient.LogsParam.*;
 
 /**
  * DockerExtension is a JUnit5 extension which starts up an isolated Docker container in a unit test, for example for
@@ -80,6 +83,8 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   private final boolean skipPullDockerImage;
   private final Supplier<DockerClient> dockerClientResolver;
   private final Map<String, String> environmentVariables;
+  private final AtomicBoolean collectLogsOnShutdown = new AtomicBoolean(false);
+  private final AtomicReference<String> logs = new AtomicReference<>();
 
   private DockerClient docker;
   private String containerID;
@@ -305,6 +310,24 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
     }
   }
 
+  /**
+   * If enabling collectLogsOnShutdown, the logs will be collected before container is removed
+   */
+  public void setCollectLogsOnShutdown(boolean collectLogsOnShutdown) {
+    this.collectLogsOnShutdown.set(collectLogsOnShutdown);
+  }
+
+  /**
+   * This returns the container logs. If container is shut down, it returns the logs up until the container was shut down.
+   *
+   * @return the container logs
+   */
+  public String getLogs() throws DockerException, InterruptedException {
+    if (logs.get() != null) return logs.get();
+    if (docker == null) return null;
+    return fetchLogs();
+  }
+
   private DockerClient resolveDockerClient() {
     try {
       if (!StringUtils.isBlank(System.getenv(DOCKER_HOST_ENVIRONMENT_VARIABLE))) {
@@ -344,7 +367,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   }
 
   private void pullDockerImage() {
-    if(skipPullDockerImage) {
+    if (skipPullDockerImage) {
       return;
     }
     try {
@@ -386,15 +409,24 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
   }
 
   private void shutdownContainer() {
+    if (docker == null || StringUtils.isBlank(containerID)) return;
     // Ignore exceptions because the container goes down anyways.
     LambdaUtils.tryTo(() -> {
-      if (docker == null || StringUtils.isBlank(containerID)) return;
       docker.stopContainer(containerID, DEFAULT_STOP_TIMEOUT_SECONDS);
+      if (collectLogsOnShutdown.get()) {
+        logs.set(fetchLogs());
+      }
       docker.removeContainer(containerID);
     });
 
     // But always release client connection.
     ObjectUtils.ifNotNullDo(docker, DockerClient::close);
+  }
+
+  private String fetchLogs() throws DockerException, InterruptedException {
+    return docker.logs(containerID, stdout()).readFully()
+            + "\n\n" +
+            docker.logs(containerID, stderr()).readFully();
   }
 
   private void testContainerReachability() throws Exception {
@@ -508,6 +540,7 @@ public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, A
 
     /**
      * Skip pulling the image if set to true. Default is to pull the image before running
+     *
      * @param skipPullDockerImage whether to pull the image
      * @return Builder
      */
