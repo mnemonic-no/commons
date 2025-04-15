@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.5] - 2025-04-15
+### Updated
+ARGUS-50254
+- Fix build pipeline
+
+## [0.5.4] - 2025-04-15
+### Updated
+ARGUS-50749 
+- Expose docker logs from `DockerExtension` for debugging
+
+## [0.5.3] - 2025-03-25
+### Updated
+ARGUS-50254
+- Add build pipeline
+
+## [0.5.2] - 2025-03-10
+### Updated
+ARGUS-49752 
+- Improve logging on component failure
+
 ## [0.5.1] - 2024-11-05
 ### Updated
 ARGUS-48064
