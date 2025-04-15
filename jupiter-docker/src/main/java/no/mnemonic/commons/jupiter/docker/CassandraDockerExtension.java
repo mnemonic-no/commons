@@ -1,5 +1,7 @@
 package no.mnemonic.commons.jupiter.docker;
 
+import no.mnemonic.commons.logging.Logger;
+import no.mnemonic.commons.logging.Logging;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -40,6 +42,8 @@ import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
  * configuration properties.
  */
 public class CassandraDockerExtension extends DockerExtension {
+
+  private static final Logger LOGGER = Logging.getLogger(CassandraDockerExtension.class);
 
   private final Path setupScript;
   private final Path truncateScript;
@@ -116,7 +120,8 @@ public class CassandraDockerExtension extends DockerExtension {
         return false;
       }
     } catch (Exception ex) {
-      throw new IllegalStateException("Could not execute 'cqlsh' to test for Cassandra reachability.", ex);
+      LOGGER.warning(ex, "Could not execute 'cqlsh' to test for Cassandra reachability.");
+      return false;
     }
 
     return true;

@@ -1,5 +1,7 @@
 package no.mnemonic.commons.jupiter.docker;
 
+import no.mnemonic.commons.logging.Logger;
+import no.mnemonic.commons.logging.Logging;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import no.mnemonic.commons.utilities.collections.CollectionUtils;
@@ -38,6 +40,7 @@ import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
  */
 public class ElasticSearchDockerExtension extends DockerExtension {
 
+  private static final Logger LOGGER = Logging.getLogger(ElasticSearchDockerExtension.class);
   private final Set<String> deleteIndices;
 
   private ElasticSearchDockerExtension(String imageName,
@@ -110,7 +113,8 @@ public class ElasticSearchDockerExtension extends DockerExtension {
       // Check if ElasticSearch is available by inspecting the output.
       return isClusterAvailable(output);
     } catch (Exception ex) {
-      throw new IllegalStateException("Could not execute 'curl' to test for ElasticSearch reachability.", ex);
+      LOGGER.warning(ex, "Could not execute 'curl' to test for ElasticSearch reachability.");
+      return false;
     }
   }
 

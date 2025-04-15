@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.6] - 2025-04-15
+### Updated
+ARGUS-50749
+- Make `DockerExtension.isContainerReachable` in subclasses return false instead of exception
+  when `execCreate` fails (e.g. due to container not yet reachable)
+
 ## [0.5.5] - 2025-04-15
 ### Updated
 ARGUS-50254

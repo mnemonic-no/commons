@@ -1,5 +1,7 @@
 package no.mnemonic.commons.jupiter.docker;
 
+import no.mnemonic.commons.logging.Logger;
+import no.mnemonic.commons.logging.Logging;
 import no.mnemonic.commons.utilities.ObjectUtils;
 import no.mnemonic.commons.utilities.StringUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -42,6 +44,7 @@ import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
  */
 public class MariaDBDockerExtension extends DockerExtension {
 
+  private static final Logger LOGGER = Logging.getLogger(MariaDBDockerExtension.class);
   private static final String SUCCESS_MESSAGE = "mysqld is alive\n";
 
   private final Path setupScript;
@@ -115,7 +118,8 @@ public class MariaDBDockerExtension extends DockerExtension {
 
       return SUCCESS_MESSAGE.equals(output);
     } catch (Exception ex) {
-      throw new IllegalStateException("Could not execute 'mysqladmin' to test for MariaDB reachability.", ex);
+      LOGGER.warning(ex, "Could not execute 'mysqladmin' to test for MariaDB reachability.");
+      return false;
     }
   }
 

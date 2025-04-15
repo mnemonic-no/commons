@@ -64,9 +64,7 @@ public class MariaDBDockerExtensionTest {
   public void testIsContainerReachableFailsOnExecCreateException() throws Throwable {
     mockStartContainer();
     when(dockerClient.execCreate(any(), any(), any())).thenThrow(DockerException.class);
-
-    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> extension.beforeAll(null));
-    assertTrue(ex.getMessage().contains("Could not execute 'mysqladmin'"));
+    assertThrows(TimeoutException.class, () -> extension.beforeAll(null));
   }
 
   @Test
@@ -74,9 +72,7 @@ public class MariaDBDockerExtensionTest {
     mockStartContainer();
     when(dockerClient.execCreate(any(), any(), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
-
-    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> extension.beforeAll(null));
-    assertTrue(ex.getMessage().contains("Could not execute 'mysqladmin'"));
+    assertThrows(TimeoutException.class, () -> extension.beforeAll(null));
   }
 
   @Test

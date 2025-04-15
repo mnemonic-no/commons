@@ -12,6 +12,7 @@ import org.mandas.docker.client.messages.ExecCreation;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.Time;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -50,18 +51,14 @@ public class ElasticSearchDockerExtensionTest {
   @Test
   public void testIsContainerReachableFailsOnExecCreateException() throws Throwable {
     when(dockerClient.execCreate(any(), any(), any())).thenThrow(DockerException.class);
-
-    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> extension.beforeAll(null));
-    assertTrue(ex.getMessage().contains("ElasticSearch reachability"));
+    assertThrows(TimeoutException.class, () -> extension.beforeAll(null));
   }
 
   @Test
   public void testIsContainerReachableFailsOnExecStartException() throws Throwable {
     when(dockerClient.execCreate(any(), any(), any())).thenReturn(execCreation("executionID"));
     when(dockerClient.execStart("executionID")).thenThrow(DockerException.class);
-
-    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> extension.beforeAll(null));
-    assertTrue(ex.getMessage().contains("ElasticSearch reachability"));
+    assertThrows(TimeoutException.class, () -> extension.beforeAll(null));
   }
 
   @Test

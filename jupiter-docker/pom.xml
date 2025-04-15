@@ -19,6 +19,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>no.mnemonic.commons</groupId>
+      <artifactId>logging</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.mandas</groupId>
       <artifactId>docker-client</artifactId>
       <version>${docker.client.version}</version>
