@@ -29,6 +29,7 @@ stages: # List of stages for jobs, and their order of execution
 # TODO: Set up dedicated runner instead of osl-gitsync1, and control build in this pipeline spec
 trigger-maven-central-sync:
   stage: post-release
+  allow_failure: true
   tags:
     - development
   rules:
@@ -48,6 +49,7 @@ trigger-maven-central-sync:
 # TODO: Set up dedicated runner instead of osl-gitsync1, and control build in this pipeline spec
 trigger-github-sync:
   stage: post-release
+  allow_failure: true
   tags:
     - development
   rules:
