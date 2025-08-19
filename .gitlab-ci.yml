@@ -13,15 +13,21 @@ include:
       - CI/Common.Pipeline.Setup.yml
       ###--------STAGES----------###
       - CI/Stage/Setup.yml
-      - CI/Stage/Build.UnitTest.yml
+      - CI/Stage/Testing/Build.MkDocs.yml
+      - CI/Stage/Testing/Compile.yml
+      - CI/Stage/Testing/UnitTest.yml
+      - CI/Stage/Testing/TestSummary.yml
+      - CI/Stage/Testing/Scan.Sonarqube.yml
       - CI/Stage/Upload.Metrics.yml
       - CI/Stage/Release.yml
       - CI/Stage/Post.Release.Maven.Artifactory.yml
 
 stages: # List of stages for jobs, and their order of execution
   - setup
+  - compile
   - unit-test
-  - upload-metrics
+  - testing
+  - scanning
   - release
   - post-release
 

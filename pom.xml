@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>no.mnemonic.commons</groupId>
   <artifactId>parent</artifactId>
@@ -44,7 +45,7 @@
     <!-- Upgrading docker-client requires to upgrade RestEasy to at least version 6 which only supports Jakarta annotations.
          Need to find an upgrade path without breaking code which cannot upgrade to Jakarta yet. Make dependency provided? -->
     <docker.client.version>5.2.2</docker.client.version>
-    <jackson.version>2.18.1</jackson.version>
+    <jackson.version>2.19.2</jackson.version>
     <resteasy.version>5.0.7.Final</resteasy.version>
 
     <guice.version>5.1.0</guice.version>
@@ -54,6 +55,7 @@
     <mockito.version>5.14.2</mockito.version>
     <spring.version>6.1.14</spring.version>
     <immutables.version>2.9.3</immutables.version>
+    <commons.io.version>2.20.0</commons.io.version>
 
     <!-- build dependencies -->
     <maven.clean.version>3.1.0</maven.clean.version>
@@ -66,10 +68,13 @@
     <maven.javadoc.version>3.1.0</maven.javadoc.version>
     <maven.license.version>1.20</maven.license.version>
     <maven.nexus.staging.version>1.6.13</maven.nexus.staging.version>
+    <maven.central.publishing.version>0.8.0</maven.central.publishing.version>
     <maven.release.version>2.5.3</maven.release.version>
     <maven.resources.version>3.1.0</maven.resources.version>
     <maven.source.version>3.0.1</maven.source.version>
     <maven.surefire.version>2.22.2</maven.surefire.version>
+    <maven.jacoco.plugin.version>0.8.12</maven.jacoco.plugin.version>
+    <maven.codefilarete.jacoco.plugin.version>1.0.0</maven.codefilarete.jacoco.plugin.version>
   </properties>
 
   <modules>
@@ -91,6 +96,21 @@
     <tag>HEAD</tag>
   </scm>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons.io.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <build>
     <resources>
       <!-- Always include license file in generated bundles. -->
@@ -105,7 +125,49 @@
         <directory>src/main/resources</directory>
       </resource>
     </resources>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>${maven.jacoco.plugin.version}</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${maven.jacoco.plugin.version}</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codefilarete</groupId>
+        <artifactId>jacoco-aggregate-submodule</artifactId>
+        <version>${maven.codefilarete.jacoco.plugin.version}</version>
+        <executions>
+          <execution>
+            <id>report-aggregate</id>
+            <goals>
+              <goal>report-aggregate</goal>
+            </goals>
+            <phase>verify</phase>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>
         <version>${maven.enforcer.version}</version>
@@ -246,6 +308,18 @@
 
   <profiles>
     <profile>
+      <id>test-coverage</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
       <!-- Use this profile to push to internal Artifactory during deploy. -->
       <id>publish-internal</id>
       <distributionManagement>
@@ -289,14 +363,12 @@
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>${maven.nexus.staging.version}</version>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${maven.central.publishing.version}</version>
             <extensions>true</extensions>
             <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <publishingServerId>central</publishingServerId>
             </configuration>
           </plugin>
         </plugins>
