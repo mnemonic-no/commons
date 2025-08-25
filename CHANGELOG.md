@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.0] - 2025-08-24
+### Updated
+ARGUS-52379
+- Changed build target version to JDK 17
+
+### Upgrade notes
+- Clients must now be running on JDK17 or newer to use this library.
+
 ## [0.5.6] - 2025-04-15
 ### Updated
 ARGUS-50749
