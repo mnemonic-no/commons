@@ -42,6 +42,7 @@ import static org.mandas.docker.client.DockerClient.ExecCreateParam.*;
  * See {@link DockerExtension.Builder} and {@link MariaDBDockerExtension.Builder} for more information on the
  * configuration properties.
  */
+@Deprecated
 public class MariaDBDockerExtension extends DockerExtension {
 
   private static final Logger LOGGER = Logging.getLogger(MariaDBDockerExtension.class);

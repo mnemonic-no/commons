@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.1] - 2025-08-24
+### Deprecated
+ARGUS-52403
+- Deprecated module `jupiter-docker`
+
+### Upgrade notes
+We are no longer maintaining the `jupiter-docker` module, and it will
+be removed in the near future.
+
+Projects using this module should switch to using `testcontainers` instead.
+
 ## [0.6.0] - 2025-08-24
 ### Updated
 ARGUS-52379

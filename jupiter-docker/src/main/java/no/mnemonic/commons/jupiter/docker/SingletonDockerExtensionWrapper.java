@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.*;
  *
  * @param <T> Type of wrapped {@link DockerExtension}
  */
+@Deprecated
 public class SingletonDockerExtensionWrapper<T extends DockerExtension>
         implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback {
 

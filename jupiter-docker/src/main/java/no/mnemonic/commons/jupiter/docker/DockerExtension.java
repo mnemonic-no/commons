@@ -68,6 +68,7 @@ import static org.mandas.docker.client.DockerClient.LogsParam.*;
  * The DockerExtension will by default use system properties to determine proxy settings when communicating with the
  * docker daemon. To completely disable proxy, you can set the system property "-DDockerExtension.disable.proxy=true".
  */
+@Deprecated
 public class DockerExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback {
 
   private static final String DOCKER_HOST_ENVIRONMENT_VARIABLE = "DOCKER_HOST";
