@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.4] - 2026-02-04
+### Updated
+ENG-54563
+- Added support in `PropertiesResolver` to include defaults files with `defaults.file.X=filename`.
+- Clarified the order and precedence of resolved properties.
+- Added tests
+
 ## [0.6.1] - 2025-08-24
 ### Deprecated
 ARGUS-52403

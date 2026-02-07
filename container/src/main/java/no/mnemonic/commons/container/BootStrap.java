@@ -21,13 +21,18 @@ import java.util.regex.Pattern;
  * Bootstraps a collection of components. <p>Uses an initial bootstrap configuration file that may include all the
  * components or, optionally, a reference to the actual source of configuration information.
  * <p>
- * Usage:
+ *
+ * Usage: BootStrap [-E] guice module=module1 module=module2 ...
+ *
  * <ol>
- * <li>Optionally, create and initialize a BeanCollection</li>
+ * <li>Use -E option to enable use of envvars</li>
  * <li>Create a Bootstrap instance, optionally passing the BeanCollection from the previous step</li>
  * <li>Call Bootstrap.init()</li>
  * <li>Call Bootstrap.getBeanCollection(), and get the components you need from it.</li>
  * </ol>
+ * <p>
+ * See {@link PropertiesResolver} for details on resolving of properties.
+ * </p>
  */
 public class BootStrap implements Versioned, ComponentListener {
 
@@ -211,14 +216,15 @@ public class BootStrap implements Versioned, ComponentListener {
 
   private static Properties resolveProperties(boolean useEnv) {
     String propertyFileName = System.getProperty(APPLICATION_PROPERTIES_FILE);
-    Properties baseProperties = new Properties();
-    if (useEnv) baseProperties.putAll(System.getenv());
-    baseProperties.putAll(System.getProperties());
-    Properties properties = new Properties(baseProperties);
+
     if (propertyFileName != null) {
-      PropertiesResolver.loadPropertiesFile(new File(propertyFileName), properties);
+      return PropertiesResolver.loadPropertiesFile(new File(propertyFileName), useEnv, true);
+    } else {
+      Properties properties = new Properties();
+      if (useEnv) properties.putAll(System.getenv());
+      properties.putAll(System.getProperties());
+      return properties;
     }
-    return properties;
   }
 
   private BeanProvider getSpringBootContainer(boolean useEnv, String bootDescriptorName) {
